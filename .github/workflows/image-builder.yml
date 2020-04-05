@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    - cron:  '0 6 * * */2'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: openwrtorg/imagebuilder:x86-64-master
+      volumes:
+        - ${PWD}:/home/build/openwrt
+    steps:
+    - name: Checkout Repo
+    - uses: actions/checkout@v2
+    - name: checkout OpenWRT
+      run: |
+        git clone --depth 1 https://git.openwrt.org/openwrt/openwrt.git openwrt
+        cd openwrt
+        cp ../config-apu2-docker .config
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a -p luci
+        ./scripts/feeds install -a -p packages
+        make -j3
