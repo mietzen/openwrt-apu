@@ -6,17 +6,12 @@ on:
     - cron:  '0 6 * * */2'
       
 jobs:
-  debuging:
-    runs-on: ubuntu-latest
-    steps:
-      - name: testing
-        run: echo $GITHUB_WORKSPACE
   build:
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
       volumes:
-        - /github/home:/home/build/openwrt
+        - /home/runner/work/openwrt-apu/openwrt-apu:/home/build/openwrt
     steps:
     - uses: actions/checkout@v2
     - name: checkout OpenWRT
