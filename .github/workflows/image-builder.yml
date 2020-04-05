@@ -15,8 +15,7 @@ jobs:
     steps:
     - name: checkout & build OpenWRT
       run: |
-        ls -al
-        id
+        sudo chown 1000:1000 .
         git clone https://git.openwrt.org/openwrt/openwrt.git
         git clone https://github.com/ngerke/openwrt-apu.git
         cd openwrt
