@@ -6,6 +6,11 @@ on:
     - cron:  '0 6 * * */2'
       
 jobs:
+  debuging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: testing
+        run: echo $GITHUB_WORKSPACE
   build:
     runs-on: ubuntu-latest
     container:
