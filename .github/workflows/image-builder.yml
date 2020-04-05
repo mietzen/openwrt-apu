@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: checkout latest master
       run: |
-        chown 1000:1000 .
+        sudo chown 1000:1000 .
         rm -rf ..?* .[!.]* *
         git clone https://git.openwrt.org/openwrt/openwrt.git
         git clone https://github.com/ngerke/openwrt-apu.git
