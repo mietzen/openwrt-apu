@@ -11,7 +11,7 @@ jobs:
     container:
       image: openwrtorg/imagebuilder:x86-64-master
       volumes:
-        - ${PWD}:/home/build/openwrt
+        - ./:/home/build/openwrt
     steps:
     - uses: actions/checkout@v2
     - name: checkout OpenWRT
