@@ -19,7 +19,7 @@ jobs:
         git clone https://git.openwrt.org/openwrt/openwrt.git
         git clone https://github.com/ngerke/openwrt-apu.git
         cd openwrt
-        cp ../openwrt-apu/config-apu2-docker .config
+        cp ../openwrt-apu/.config-apu2-docker .config
         ./scripts/feeds update -a
         ./scripts/feeds install -a -p luci
         ./scripts/feeds install -a -p packages
