@@ -3,24 +3,39 @@ on:
   push:
     branches: [ master ]
   schedule:
-    - cron:  '0 6 * * */2'
+    - cron:  '0 4 * * */2'
       
 jobs:
   build:
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
-      volumes:
-        - /home/runner/work/openwrt-apu/openwrt-apu:/home/build/openwrt
     steps:
-    - name: checkout & build OpenWRT
+    - name: checkout latest master
       run: |
-        sudo chown 1000:1000 .
+        rm -rf ..?* .[!.]* *
         git clone https://git.openwrt.org/openwrt/openwrt.git
         git clone https://github.com/ngerke/openwrt-apu.git
+    - name: build
+      run: |
         cd openwrt
         cp ../openwrt-apu/.config-apu2-docker .config
         ./scripts/feeds update -a
         ./scripts/feeds install -a -p luci
         ./scripts/feeds install -a -p packages
-        make -j3
+        make -j`nproc`
+    - name: prepare deploy
+      run: |
+        cd openwrt-apu
+        git checkout gh-pages
+        cp -R ..openwrt/bin/targets .
+        git add .
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
+    - name: deploy
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        directory: openwrt-apu
+        branch: 'gh-pages'
