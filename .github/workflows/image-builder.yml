@@ -13,12 +13,12 @@ jobs:
       volumes:
         - /home/runner/work/openwrt-apu/openwrt-apu:/home/build/openwrt
     steps:
-    - uses: actions/checkout@v2
-    - name: checkout OpenWRT
+    - name: checkout & build OpenWRT
       run: |
         git clone --depth 1 https://git.openwrt.org/openwrt/openwrt.git openwrt
+        git clone --depth 1 https://github.com/ngerke/openwrt-apu.git openwrt-apu
         cd openwrt
-        cp ../config-apu2-docker .config
+        cp ../openwrt-apu/config-apu2-docker .config
         ./scripts/feeds update -a
         ./scripts/feeds install -a -p luci
         ./scripts/feeds install -a -p packages
