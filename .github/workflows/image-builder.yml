@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
+      env: 
+        GITHUB_ACTOR: ${{ GITHUB_ACTOR }}
+        GITHUB_REPOSITORY: ${{ GITHUB_REPOSITORY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - name: checkout latest master
       run: |
@@ -25,18 +29,15 @@ jobs:
         ./scripts/feeds install -a -p luci
         ./scripts/feeds install -a -p packages
         make -j`nproc`
-    - name: prepare deploy
+    - name: deploy
       run: |
         cd openwrt-apu
-        git checkout gh-pages
+        pages_branch="gh-pages"
+        git checkout "${pages_branch}"
         cp -R ../openwrt/bin/targets .
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
-    - name: deploy
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        directory: openwrt-apu
-        branch: 'gh-pages'
+        remote_repo="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        git push "${remote_repo}" HEAD:${pages_branch}
