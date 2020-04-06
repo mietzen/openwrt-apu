@@ -38,7 +38,7 @@ jobs:
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone -b "${pages_branch}" --single-branch "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        cp -R ../openwrt/bin/targets/x86/64/* .
+        cp -R ../openwrt/bin/* .
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
