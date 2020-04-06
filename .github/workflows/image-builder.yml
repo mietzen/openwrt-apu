@@ -16,7 +16,6 @@ jobs:
     steps:
     - name: checkout latest master
       run: |
-        echo "${GITHUB_ACTOR}"
         sudo chown 1000:1000 .
         rm -rf ..?* .[!.]* *
         git clone https://git.openwrt.org/openwrt/openwrt.git
@@ -25,9 +24,9 @@ jobs:
       run: |
         cd openwrt
         cp ../openwrt-apu/.config-apu2-docker .config
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a -p luci
-        ./scripts/feeds install -a -p packages
+        #./scripts/feeds update -a
+        #./scripts/feeds install -a -p luci
+        #./scripts/feeds install -a -p packages
         #make -j`nproc`
     - name: deploy
       env:
@@ -42,6 +41,8 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
+        echo "${GITHUB_ACTOR}"
+        echo "${GITHUB_REPOSITORY}"
+        git push
         remote_repo="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-        echo "${remote_repo}"
         # git push "${remote_repo}" HEAD:${pages_branch}
