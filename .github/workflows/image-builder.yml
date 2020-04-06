@@ -16,19 +16,19 @@ jobs:
       run: |
         sudo chown 1000:1000 .
         rm -rf ..?* .[!.]* *
-        git clone https://git.openwrt.org/openwrt/openwrt.git
-        git clone https://github.com/${GITHUB_REPOSITORY}.git
+        #git clone https://git.openwrt.org/openwrt/openwrt.git
+        #git clone https://github.com/${GITHUB_REPOSITORY}.git
     - name: build
       shell: bash
       run: |
-        cd openwrt
-        cp ../openwrt-apu/.config-apu2-docker .config
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a -p luci
-        ./scripts/feeds install -a -p packages
-        ./scripts/feeds install -a -p routing
-        ./scripts/feeds install -a -p telephony
-        make -j`nproc`
+        #cd openwrt
+        #cp ../openwrt-apu/.config-apu2-docker .config
+        #./scripts/feeds update -a
+        #./scripts/feeds install -a -p luci
+        #./scripts/feeds install -a -p packages
+        #./scripts/feeds install -a -p routing
+        #./scripts/feeds install -a -p telephony
+        #make -j`nproc`
     - name: deploy
       shell: bash
       env:
@@ -38,7 +38,8 @@ jobs:
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone -b "${pages_branch}" --single-branch "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        cp -R ../openwrt/bin/* .
+        #cp -R ../openwrt/bin/* .
+        touch test 123
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
