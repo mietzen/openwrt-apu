@@ -6,7 +6,7 @@ on:
     - cron:  '0 4 * * */2'
       
 jobs:
-  build image:
+  build-image:
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
