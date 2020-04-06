@@ -11,8 +11,8 @@ jobs:
     container:
       image: openwrtorg/imagebuilder:x86-64-master
       env: 
-        GITHUB_ACTOR: ${{ GITHUB_ACTOR }}
-        GITHUB_REPOSITORY: ${{ GITHUB_REPOSITORY }}
+        GITHUB_ACTOR: "${GITHUB_ACTOR}"
+        GITHUB_REPOSITORY: "${GITHUB_REPOSITORY}"
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - name: checkout latest master
