@@ -12,6 +12,7 @@ jobs:
       image: openwrtorg/imagebuilder:x86-64-master
     steps:
     - name: checkout latest master
+      shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -20,20 +21,24 @@ jobs:
         git clone https://git.openwrt.org/openwrt/openwrt.git
         git clone https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
     - name: build
+      shell: bash
       run: |
         cd openwrt
         cp ../openwrt-apu/.config-apu2-docker .config
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a -p luci
-        ./scripts/feeds install -a -p packages
-        make -j`nproc`
+        #./scripts/feeds update -a
+        #./scripts/feeds install -a -p luci
+        #./scripts/feeds install -a -p packages
+        #make -j`nproc`
     - name: deploy
+      shell: bash
       run: |
         cd openwrt-apu
         pages_branch="gh-pages"
         git checkout "${pages_branch}"
-        cp -R ../openwrt/bin .
+        #cp -R ../openwrt/bin .
+        touch test
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git diff-index --quiet HEAD || (git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build" && git push)
+        git diff-index --quiet HEAD || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
+        git push
