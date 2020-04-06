@@ -43,4 +43,4 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git diff-index --quiet HEAD || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
-        git push
+        git push "${repo_url}" HEAD:${pages_branch}
