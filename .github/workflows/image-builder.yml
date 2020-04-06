@@ -28,7 +28,7 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a -p luci
         ./scripts/feeds install -a -p packages
-        make -j`nproc`
+        #make -j`nproc`
     - name: deploy
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -36,10 +36,12 @@ jobs:
         cd openwrt-apu
         pages_branch="gh-pages"
         git checkout "${pages_branch}"
-        cp -R ../openwrt/bin/targets .
+        #cp -R ../openwrt/bin/targets .
+        touch test
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
         remote_repo="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-        git push "${remote_repo}" HEAD:${pages_branch}
+        echo "${remote_repo}"
+        # git push "${remote_repo}" HEAD:${pages_branch}
