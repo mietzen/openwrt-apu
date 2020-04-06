@@ -1,4 +1,4 @@
-name: CI
+name: OpenWRT-Master
 on:
   push:
     branches: [ master ]
@@ -6,7 +6,7 @@ on:
     - cron:  '0 4 * * */2'
       
 jobs:
-  build:
+  build image:
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
@@ -25,17 +25,22 @@ jobs:
       run: |
         cd openwrt
         cp ../openwrt-apu/.config-apu2-docker .config
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a -p luci
-        ./scripts/feeds install -a -p packages
-        make -j`nproc`
+        #./scripts/feeds update -a
+        #./scripts/feeds install -a -p luci
+        #./scripts/feeds install -a -p packages
+        #./scripts/feeds install -a -p routing
+        #./scripts/feeds install -a -p telephony
+        #make -j`nproc`
     - name: deploy
       shell: bash
       run: |
         cd openwrt-apu
         pages_branch="gh-pages"
         git checkout "${pages_branch}"
-        cp -R ../openwrt/bin .
+        #cp -R ../openwrt/bin/* .
+        touch test
+        mkdir -p test_dir
+        touch test_dir/test2
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
