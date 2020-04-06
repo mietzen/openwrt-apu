@@ -10,16 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
-      env: 
-        GITHUB_ACTOR: "${GITHUB_ACTOR}"
-        GITHUB_REPOSITORY: "${GITHUB_REPOSITORY}"
     steps:
     - name: checkout latest master
+      env:
+        GITHUB_ACTOR: "${GITHUB_ACTOR}"
+        GITHUB_REPOSITORY: "${GITHUB_REPOSITORY}"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         sudo chown 1000:1000 .
         rm -rf ..?* .[!.]* *
         git clone https://git.openwrt.org/openwrt/openwrt.git
-        git clone https://github.com/ngerke/openwrt-apu.git
+        git clone https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
     - name: build
       run: |
         cd openwrt
@@ -29,8 +30,6 @@ jobs:
         #./scripts/feeds install -a -p packages
         #make -j`nproc`
     - name: deploy
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd openwrt-apu
         pages_branch="gh-pages"
@@ -41,8 +40,4 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
-        echo "${GITHUB_ACTOR}"
-        echo "${GITHUB_REPOSITORY}"
         git push
-        remote_repo="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-        # git push "${remote_repo}" HEAD:${pages_branch}
