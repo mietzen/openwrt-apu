@@ -13,8 +13,6 @@ jobs:
     steps:
     - name: checkout latest master
       env:
-        GITHUB_ACTOR: "${GITHUB_ACTOR}"
-        GITHUB_REPOSITORY: "${GITHUB_REPOSITORY}"
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         sudo chown 1000:1000 .
