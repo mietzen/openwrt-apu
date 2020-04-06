@@ -23,19 +23,20 @@ jobs:
       run: |
         cd openwrt
         cp ../openwrt-apu/.config-apu2-docker .config
-        #./scripts/feeds update -a
-        #./scripts/feeds install -a -p luci
-        #./scripts/feeds install -a -p packages
-        #make -j`nproc`
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a -p luci
+        ./scripts/feeds install -a -p packages
+        make -j`nproc`
     - name: deploy
       run: |
         cd openwrt-apu
         pages_branch="gh-pages"
         git checkout "${pages_branch}"
-        #cp -R ../openwrt/bin/targets .
-        touch test
+        cp -R ../openwrt/bin/targets .
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
-        git push
+        if [[ $(git diff-index --quiet HEAD) ]]; then
+          git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
+          git push
+        fi
