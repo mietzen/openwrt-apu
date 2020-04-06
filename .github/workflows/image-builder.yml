@@ -32,7 +32,7 @@ jobs:
         cd openwrt-apu
         pages_branch="gh-pages"
         git checkout "${pages_branch}"
-        cp -R ../openwrt/bin/targets .
+        cp -R ../openwrt/bin .
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
