@@ -13,10 +13,10 @@ jobs:
       env: 
         GITHUB_ACTOR: "${GITHUB_ACTOR}"
         GITHUB_REPOSITORY: "${GITHUB_REPOSITORY}"
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - name: checkout latest master
       run: |
+        echo "${GITHUB_ACTOR}"
         sudo chown 1000:1000 .
         rm -rf ..?* .[!.]* *
         git clone https://git.openwrt.org/openwrt/openwrt.git
@@ -30,6 +30,8 @@ jobs:
         ./scripts/feeds install -a -p packages
         make -j`nproc`
     - name: deploy
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd openwrt-apu
         pages_branch="gh-pages"
