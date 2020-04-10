@@ -30,7 +30,6 @@ jobs:
         cp ../openwrt-apu/.config-apu2-docker .config
         make defconfig
         make -j`nproc`
-        df -h
     - name: deploy
       shell: bash
       env:
@@ -40,7 +39,8 @@ jobs:
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone -b "${pages_branch}" --single-branch "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        mv ../openwrt/bin/* .
+        rm -rf *
+        mv -f ../openwrt/bin/* .
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
