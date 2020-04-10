@@ -16,8 +16,8 @@ jobs:
       run: |
         sudo chown 1000:1000 .
         rm -rf ..?* .[!.]* *
-        git clone https://git.openwrt.org/openwrt/openwrt.git
-        git clone https://github.com/${GITHUB_REPOSITORY}.git
+        git clone --depth 1 https://git.openwrt.org/openwrt/openwrt.git
+        git clone --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
     - name: build
       shell: bash
       run: |
@@ -37,7 +37,7 @@ jobs:
       run: |
         pages_branch="gh-pages"
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-        git clone -b "${pages_branch}" --single-branch "${repo_url}" "${pages_branch}"
+        git clone --depth 1 -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
         rm -rf *
         mv -f ../openwrt/bin/targets/x86/64/* .
