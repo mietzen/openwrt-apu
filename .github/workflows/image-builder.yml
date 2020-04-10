@@ -47,3 +47,12 @@ jobs:
         git config --local user.name "GitHub Action"
         git diff-index --quiet HEAD || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
         git push "${repo_url}" HEAD:${pages_branch}
+    - name: upload on bintray
+      uses: hpcsc/upload-bintray-docker-action@v1
+      with:
+        repository: OpenWRT-APU2
+        package: master
+        version: ${{github.sha}}
+        sourcePath: ./gh-pages/*
+        username: ngerke
+        apiKey: ${{ secrets.BINTRAY_API_KEY }}
