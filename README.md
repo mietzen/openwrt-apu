@@ -3,6 +3,8 @@
 
 ## Setup on OpenWRT
 
+`passwd`
+
 `nano /etc/config/fstab`
 
 ```
@@ -29,8 +31,29 @@ config mount 'overlay'
         option label 'data'
         option enabled '1'
 
+```
+
+`reboot`
+
+
+`dd if=/dev/zero of=/overlay/swap bs=1M count=1000`
+
+`mkswap /overlay/swap`
+
+`nano /etc/config/fstab`
+
+```
 config swap 'swap'
         option device '/overlay/swap'
         option enabled '1'
 
+```
+
+`/etc/init.d/fstab boot`
+
+`swapon -s`
+
+```
+Filename				Type		Size	Used	Priority
+/overlay/swap                           file		1023996	0	-2
 ```
