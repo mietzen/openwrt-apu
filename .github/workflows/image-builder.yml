@@ -3,8 +3,8 @@ on:
   push:
     branches: [ master ]
   schedule:
-    - cron:  '0 4 * * */2'
-      
+    - cron:  '0 4 * * *'
+
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -40,7 +40,8 @@ jobs:
         git clone -b "${pages_branch}" --single-branch "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
         rm -rf *
-        mv -f ../openwrt/bin/* .
+        mv -f ../openwrt/bin/targets/x86/64/* .
+        rm -rf packages
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
