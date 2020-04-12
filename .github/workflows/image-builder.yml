@@ -6,7 +6,20 @@ on:
     - cron:  '0 4 * * *'
 
 jobs:
+  check-rev:
+    runs-on: ubuntu-latest
+    env:
+      BUILD: 1
+    steps:
+    - name: check for new commits
+      shell: bash
+      run: |
+        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk 'BEGIN{print "r0-"}; {print $1=substr($1,1,7)}' | tr -d "\n")
+        rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | tr -d "\n")
+        if [ "$rev_last_build" = "$rev_last_build" ]; then; BUILD=0; fi
   build-image:
+    needs: check-rev
+    if: check-rev.BUILD == 1
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
