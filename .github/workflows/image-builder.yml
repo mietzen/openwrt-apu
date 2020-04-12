@@ -65,6 +65,7 @@ jobs:
         revision=$(cat ./version.buildinfo)
         cd ../openwrt-apu
         git clean -fxd
+        git pull
         sed -i 's/^OpenWRT revision .*$/OpenWRT revision '"$revision"'/' README.md
         git add .
         git config --local user.email "action@github.com"
