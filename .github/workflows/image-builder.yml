@@ -18,7 +18,7 @@ jobs:
         unset BUILD
         rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk 'BEGIN{print "r0-"}; {print $1=substr($1,1,7)}' | tr -d "\n")
         rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | tr -d "\n")
-        if [ "$rev_last_build" = "$rev_last_build" ]; then; BUILD='false'; else; BUILD='true'; fi
+        if [ "$rev_last_build" = "$rev_last_build" ]; then BUILD='false' ; else ; BUILD='true' ; fi
         echo ::set-output name=BUILD::${BUILD}
     - name: checkout latest master
       if: ${{ steps.check-rev.outputs.BUILD }}
