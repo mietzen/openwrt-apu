@@ -57,3 +57,18 @@ config swap 'swap'
 Filename				Type		Size	Used	Priority
 /overlay/swap                           file		1023996	0	-2
 ```
+
+add key to $HOME/.shh/authorized_keys
+
+test login
+
+```
+config dropbear
+        option PasswordAuth 'off'
+        option RootPasswordAuth 'off'
+        option RootLogin 'off'  
+        option Port         '22'
+        option Interface    'lan'
+        option BannerFile   '/etc/banner'
+
+```
