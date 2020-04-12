@@ -12,14 +12,15 @@ jobs:
       image: openwrtorg/imagebuilder:x86-64-master
     steps:
     - name: check for new commits
+      if: github.event_name == 'schedule'
       id: check-rev
       shell: bash
       run: |
-        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk 'BEGIN{print "r0-"}; {print $1=substr($1,1,7)}' | tr -d "\n")
-        rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | tr -d "\n")
+        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,7)}' | tr -d "\n")
+        rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | cut -d'-' -f2 | tr -d "\n")
         if [ "$rev_last_build" = "$rev_last_build" ]; then echo 'Nothing new, will not build' ; else echo ::set-output name=BUILD::true ; fi
     - name: checkout latest master
-      if: ${{ steps.check-rev.outputs.BUILD }}
+      if: steps.check-rev.outputs.BUILD || github.event_name == 'push'
       shell: bash
       run: |
         sudo chown 1000:1000 .
@@ -27,7 +28,7 @@ jobs:
         git clone https://git.openwrt.org/openwrt/openwrt.git
         git clone --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
     - name: build
-      if: ${{ steps.check-rev.outputs.BUILD }}
+      if: steps.check-rev.outputs.BUILD || github.event_name == 'push'
       shell: bash
       run: |
         cd openwrt
@@ -40,21 +41,23 @@ jobs:
         make defconfig
         make -j`nproc`
     - name: deploy
-      if: ${{ steps.check-rev.outputs.BUILD }}
+      if: steps.check-rev.outputs.BUILD || github.event_name == 'push'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.push_token }}
+        GITHUB_TOKEN: ${{ secrets.push_token }} || github.event_name == 'push'
       run: |
+        sudo apt-get update -q
+        sudo apt-get install tree -q -y
+        wget https://imagemagick.org/download/binaries/magick
+        chmod +x magick
         pages_branch="gh-pages"
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone --depth 1 -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        rm -rf *
         mv -f ../openwrt/bin/targets/x86/64/* .
         rm -rf packages
-        sudo apt-get update -q
-        sudo apt-get install tree -q -y
         tree -H '.' -L 1 --noreport --charset utf-8 > index.html
+        cat ./version.buildinfo | cut -d'-' -f2 | ../magick convert -background none -density 196 -resample 72 -unsharp 0x.5 -font "Courier" text:- -trim +repage -bordercolor white -border 3 latest-hash.png
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"

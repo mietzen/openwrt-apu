@@ -1,5 +1,6 @@
 # openwrt-apu
 
+![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg) Latest build revision: ![latest-hash](https://ngerke.github.io/openwrt-apu/latest-hash.png)
 
 ## Setup on OpenWRT
 
@@ -19,12 +20,12 @@ config global
 config mount 'boot'
         option target '/boot'
         option label 'kernel'
-        option enabled '1'        
+        option enabled '1'
 
 config mount 'rom'
         option target '/rom'
         option label 'rootfs'
-        option enabled '1'        
+        option enabled '1'
 
 config mount 'overlay'
         option target '/overlay'
@@ -66,7 +67,7 @@ test login
 config dropbear
         option PasswordAuth 'off'
         option RootPasswordAuth 'off'
-        option RootLogin 'off'  
+        option RootLogin 'off'
         option Port         '22'
         option Interface    'lan'
         option BannerFile   '/etc/banner'
