@@ -1,5 +1,6 @@
 name: OpenWRT-Master
 on:
+
   push:
     branches: [ master ]
   schedule:
@@ -8,6 +9,7 @@ on:
 jobs:
   build-image:
     runs-on: ubuntu-latest
+    if: github.actor != "GitHub Action Bot"
     container:
       image: openwrtorg/imagebuilder:x86-64-master
     steps:
