@@ -23,7 +23,7 @@ jobs:
       if: steps.check-rev.outputs.BUILD || github.event_name == 'push'
       shell: bash
       run: |
-        sudo chown 1000:1000 .
+        sudo chown $(id -u):$(id -g) .
         rm -rf ..?* .[!.]* *
         git clone https://git.openwrt.org/openwrt/openwrt.git
         git clone --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
