@@ -47,8 +47,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
         sudo apt-get update -q
-        sudo apt-get install tree -q -y
-        wget https://imagemagick.org/download/binaries/magick
+        sudo apt-get install fuse tree -q -y
+        wget -q https://imagemagick.org/download/binaries/magick
         chmod +x magick
         pages_branch="gh-pages"
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
