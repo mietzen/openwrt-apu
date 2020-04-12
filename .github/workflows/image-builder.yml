@@ -16,8 +16,10 @@ jobs:
       id: check-rev
       shell: bash
       run: |
-        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,7)}' | tr -d "\n")
+        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
+        echo "$rev_remote"
         rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | cut -d'-' -f2 | tr -d "\n")
+        echo "$rev_last_build"
         if [ "$rev_last_build" = "$rev_last_build" ]; then echo 'Nothing new, will not build' ; else echo ::set-output name=BUILD::true ; fi
     - name: checkout latest master
       if: steps.check-rev.outputs.BUILD || github.event_name == 'push'
