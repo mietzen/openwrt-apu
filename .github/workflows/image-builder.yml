@@ -60,7 +60,7 @@ jobs:
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
+        git diff-index --quiet ${pages_branch} || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
         git push "${repo_url}" HEAD:${pages_branch}
         revision=$(cat ./version.buildinfo)
         cd ../openwrt-apu
@@ -70,5 +70,5 @@ jobs:
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        git commit -m "Updated build revision"
+        git diff-index --quiet master || git commit -m "Updated build revision"
         git push "${repo_url}" HEAD:master
