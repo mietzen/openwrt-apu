@@ -1,6 +1,7 @@
 # openwrt-apu
 
-![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg) Latest build revision: ![latest-hash](https://ngerke.github.io/openwrt-apu/latest-hash.png)
+![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg) 
+OpenWRT revision r0-e66becb
 
 ## Setup on OpenWRT
 
