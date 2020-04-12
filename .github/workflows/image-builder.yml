@@ -6,25 +6,22 @@ on:
     - cron:  '0 4 * * *'
 
 jobs:
-  check-rev:
-    runs-on: ubuntu-latest
-    env:
-      BUILD: 1
-    steps:
-    - name: check for new commits
-      shell: bash
-      run: |
-        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk 'BEGIN{print "r0-"}; {print $1=substr($1,1,7)}' | tr -d "\n")
-        rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | tr -d "\n")
-        if [ "$rev_last_build" = "$rev_last_build" ]; then; BUILD=0; fi
   build-image:
-    needs: check-rev
-    if: check-rev.BUILD == 1
     runs-on: ubuntu-latest
     container:
       image: openwrtorg/imagebuilder:x86-64-master
     steps:
+    - name: check for new commits
+      id: check-rev
+      shell: bash
+      run: |
+        unset BUILD
+        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk 'BEGIN{print "r0-"}; {print $1=substr($1,1,7)}' | tr -d "\n")
+        rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | tr -d "\n")
+        if [ "$rev_last_build" = "$rev_last_build" ]; then; BUILD='false'; else; BUILD='true'; fi
+        echo ::set-output name=BUILD::${BUILD}
     - name: checkout latest master
+      if: ${{ steps.check-rev.outputs.BUILD }}
       shell: bash
       run: |
         sudo chown 1000:1000 .
@@ -32,6 +29,7 @@ jobs:
         git clone --depth 1 https://git.openwrt.org/openwrt/openwrt.git
         git clone --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
     - name: build
+      if: ${{ steps.check-rev.outputs.BUILD }}
       shell: bash
       run: |
         cd openwrt
@@ -44,6 +42,7 @@ jobs:
         make defconfig
         make -j`nproc`
     - name: deploy
+      if: ${{ steps.check-rev.outputs.BUILD }}
       shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
