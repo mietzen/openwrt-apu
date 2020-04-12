@@ -44,7 +44,7 @@ jobs:
       if: steps.check-rev.outputs.BUILD || github.event_name == 'push'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.push_token }} || github.event_name == 'push'
+        GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
         sudo apt-get update -q
         sudo apt-get install tree -q -y
