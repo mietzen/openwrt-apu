@@ -47,9 +47,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
         sudo apt-get update -q
-        sudo apt-get install fuse tree -q -y
-        wget -q https://imagemagick.org/download/binaries/magick
-        chmod +x magick
+        sudo apt-get install imagemagick tree -q -y
         pages_branch="gh-pages"
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone --depth 1 -b "${pages_branch}" "${repo_url}" "${pages_branch}"
@@ -57,7 +55,7 @@ jobs:
         mv -f ../openwrt/bin/targets/x86/64/* .
         rm -rf packages
         tree -H '.' -L 1 --noreport --charset utf-8 > index.html
-        cat ./version.buildinfo | cut -d'-' -f2 | ../magick convert -background none -density 196 -resample 72 -unsharp 0x.5 -font "Courier" text:- -trim +repage -bordercolor white -border 3 latest-hash.png
+        cat ./version.buildinfo | cut -d'-' -f2 | convert -background none -density 196 -resample 72 -unsharp 0x.5 -font "Courier" text:- -trim +repage -bordercolor white -border 3 latest-hash.png
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
