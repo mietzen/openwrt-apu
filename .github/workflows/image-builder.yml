@@ -1,20 +1,15 @@
 name: OpenWRT-Master
 on:
-
-  push:
-    branches: [ master ]
   schedule:
     - cron:  '0 2 * * *'
 
 jobs:
   build-image:
     runs-on: ubuntu-latest
-    if: github.event.pusher.name != 'GitHub Action Bot'
     container:
       image: openwrtorg/imagebuilder:x86-64-master
     steps:
     - name: check for new commits
-      if: github.event_name == 'schedule'
       id: check-rev
       shell: bash
       run: |
