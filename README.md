@@ -1,13 +1,90 @@
-# OpenWRT for PC-Engines Apu2
+# WIP: My [OpenWRT](https://openwrt.org/) Setup for the [PC-Engines apu2](https://www.pcengines.ch/apu2.htm)
 
-<a href="https://github.com/ngerke/openwrt-apu/actions?query=workflow%3AOpenWRT-Master+branch%3Amaster" rel="OpenWRT-Master">![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master)</a>
+## Download latest Image nightly build from OpenWRT Master:
 
+![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master&event=schedule)  
 OpenWRT revision r12947-77b99ea3c6
+
 [Download](https://ngerke.github.io/openwrt-apu/)
 
-## Setup on OpenWRT
+## What's this?
 
-`passwd`
+This is my personal Setup/Image for a OpenWRT installation on the apu2 with docker. Why? Because the apu has more than enough power to also run traefik and pihole along with OpenWRT and function as ingress node for my small home cluster.  
+My image has all the apu2 + WLE600VX specific packages installed, as well as the some packages I need for my Setup:  
+`luci, collectd, curl, docker-ce, fdisk, wireguard`
+It's also compiled with `CONFIG_KERNEL_DEVMEM=y` and `CONFIG_TARGET_OPTIMIZATION=”-Os -pipe -march=btver2“`.
+
+### Hardware
+
+- PC Engines APU 2
+- WLE600VX Wifi card
+- 16 GB mSATA SSD (Don't use an SD card, the mSATA SSD is way faster)
+- Serial to USB adapter (Setup)
+- USB stick >= 4 GB (Setup)
+
+## How to Install and Setup
+
+### Install OpenWRT
+
+This is only a very brief instruction on how to setup the apu for a more detailed description see the [official install guide](https://openwrt.org/toh/pcengines/apu2).
+
+Get a serial to USB adapter and a USB stick, install [TinyCore](https://www.pcengines.ch/tinycore.htm) to it and copy the image on the stick.  
+(You may also want to update your BIOS, if so follow this [guide](https://pcengines.ch/howto.htm#TinyCoreLinux) )  
+Plug the stick into the apu and connect it via the USB to serial adapter with your PC, but don't power the apu on yet.  
+Open a Terminal and type:
+```
+screen /dev/$(dmesg | grep -o -e "ttyUSB[[:digit:]]$") 115200,cs8
+```
+
+Now power on the apu, on the Terminal you should now see the apu booting TinyCore. Once booted enter the following in TinyCore
+
+```
+gzip -dc /openwrt-x86-64-combined-squashfs.img.gz | sudo dd status=progress bs=8M of=/dev/sda
+```
+
+When finished reboot and unplug the TinyCore Stick, OpenWRT is now reachable via SSH on 192.168.1.1 on the LAN interface (eth1), for convenience you may now switch to SSH.
+
+### Setup OpenWRT
+
+This is mainly a documentation for myself on how I set everything up.
+
+#### Set your root password
+Enter `passwd` you'll be prompted for a new password
+
+#### Partition the rest of your volume
+ Type `fdisk /dev/sda`
+ Press `p` to print your partition table, it should look like this:
+
+ ```
+ Disk /dev/sda: 14.94 GiB, 16013942784 bytes, 31277232 sectors
+ Disk model: SATA SSD
+ Units: sectors of 1 * 512 = 512 bytes
+ Sector size (logical/physical): 512 bytes / 512 bytes
+ I/O size (minimum/optimal): 512 bytes / 512 bytes
+ Disklabel type: dos
+ Disk identifier: 0x423b062f
+ Device     Boot   Start      End  Sectors  Size Id Type
+ /dev/sda1  *        512    33279    32768   16M 83 Linux
+ /dev/sda2         33792  1057791  1024000  500M 83 Linux
+ ```
+
+ Now press `n` to create a new partition press `Retrun` 4 times to use the  default value, this will create a partition filling up all unassinged space.  
+ Press `p` again to print your partition table, it should now look like this:
+ ```
+
+ Disk /dev/sda: 14.94 GiB, 16013942784 bytes, 31277232 sectors
+ Disk model: SATA SSD
+ Units: sectors of 1 * 512 = 512 bytes
+ Sector size (logical/physical): 512 bytes / 512 bytes
+ I/O size (minimum/optimal): 512 bytes / 512 bytes
+ Disklabel type: dos
+ Disk identifier: 0x423b062f
+
+ Device     Boot   Start      End  Sectors  Size Id Type
+ /dev/sda1  *        512    33279    32768   16M 83 Linux
+ /dev/sda2         33792  1057791  1024000  500M 83 Linux
+ /dev/sda3       1058816 31277231 30218416 14.4G 83 Linux
+ ```
 
 `nano /etc/config/fstab`
 
