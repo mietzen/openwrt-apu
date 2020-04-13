@@ -1,6 +1,6 @@
 # OpenWRT for PC-Engines Apu2
 
-![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master&event=schedule)
+![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master)
 
 OpenWRT revision r12947-77b99ea3c6
 [Download](https://ngerke.github.io/openwrt-apu/)
