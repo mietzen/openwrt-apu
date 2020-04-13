@@ -2,7 +2,7 @@
 
 ![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg) 
 
-OpenWRT revision r12944-4e535d81ee
+OpenWRT revision r12947-77b99ea3c6
 [Download](https://ngerke.github.io/openwrt-apu/)
 
 ## Setup on OpenWRT
