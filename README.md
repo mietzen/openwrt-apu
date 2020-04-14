@@ -95,6 +95,12 @@ config mount 'overlay'
         option enabled '1'
 ```
 
+```
+mount /dev/sda3 /mnt
+cp -a -f /overlay/. /mnt
+umount /mnt
+```
+
 `reboot`
 
 
