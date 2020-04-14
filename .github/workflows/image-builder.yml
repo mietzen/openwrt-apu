@@ -25,7 +25,7 @@ jobs:
       if: steps.check-rev.outputs.BUILD
       shell: bash
       env:
-        BRANCH: ${{ github.ref	}}
+        BRANCH: ${{ github.ref }}
       run: |
         sudo chown $(id -u):$(id -g) .
         rm -rf ..?* .[!.]* *
