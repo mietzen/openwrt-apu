@@ -3,7 +3,7 @@
 ## Download latest Image nightly build from OpenWRT Master:
 
 ![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master&event=schedule)  
-OpenWRT revision r12975-9fd36f54f5
+OpenWRT revision r12976-d0cb6e995b
 
 [Download](https://ngerke.github.io/openwrt-apu/)
 
