@@ -29,7 +29,7 @@ jobs:
       run: |
         sudo chown $(id -u):$(id -g) .
         rm -rf ..?* .[!.]* *
-        git clone --depth 3 https://git.openwrt.org/openwrt/openwrt.git
+        git clone --depth 1 https://git.openwrt.org/openwrt/openwrt.git
         echo ${BRANCH}
         git clone -b ${BRANCH} --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
     - name: build
