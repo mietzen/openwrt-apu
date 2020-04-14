@@ -29,7 +29,7 @@ jobs:
       run: |
         sudo chown $(id -u):$(id -g) .
         rm -rf ..?* .[!.]* *
-        git clone https://git.openwrt.org/openwrt/openwrt.git
+        git clone --depth 1 https://git.openwrt.org/openwrt/openwrt.git
         echo ${BRANCH}
         git clone -b ${BRANCH} --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
     - name: build
@@ -45,6 +45,9 @@ jobs:
         cp ../openwrt-apu/.config-apu2-docker .config
         make defconfig
         make -j`nproc`
+        cd ..
+        mv -f openwrt/bin artifacts
+        rm -rf openwrt
     - name: deploy
       if: steps.check-rev.outputs.BUILD
       shell: bash
@@ -58,7 +61,7 @@ jobs:
         git clone --depth 1 -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
         rm -rf *
-        mv -f ../openwrt/bin/* .
+        mv -f ../artifacts/* .
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
         find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
         find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
@@ -66,18 +69,17 @@ jobs:
         find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
+        echo '{"schemaVersion":1,"label":"Revision","message":"$(cat targets/x86/64/version.buildinfo)","color":"green","cacheSeconds":1800}' > revision.json
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
         git diff-index --quiet ${pages_branch} || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
         git push "${repo_url}" HEAD:${pages_branch}
-        revision=$(cat ./version.buildinfo)
-        cd ../openwrt-apu
-        git clean -fxd
-        git pull
-        sed -i 's/^OpenWRT revision .*$/OpenWRT revision '"$revision"'/' README.md
-        git add .
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action Bot"
-        git diff-index --quiet master || git commit -m "Updated build revision"
-        git push "${repo_url}" HEAD:master
+    - name: post
+      if: failure()
+      shell: bash
+      env:
+        GITHUB_EVENT_PATH: ${GITHUB_EVENT_PATH}
+      run: |
+        df -h
+        cat $GITHUB_EVENT_PATH
