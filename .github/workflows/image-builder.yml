@@ -24,14 +24,12 @@ jobs:
     - name: checkout latest master
       if: steps.check-rev.outputs.BUILD
       shell: bash
-      env:
-        BRANCH: ${{ github.ref }}
       run: |
         sudo chown $(id -u):$(id -g) .
         rm -rf ..?* .[!.]* *
         git clone https://git.openwrt.org/openwrt/openwrt.git
-        echo ${BRANCH}
-        git clone -b ${BRANCH} --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
+        echo ${GITHUB_REF}
+        git clone -b ${GITHUB_REF} --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
     - name: build
       if: steps.check-rev.outputs.BUILD
       shell: bash
