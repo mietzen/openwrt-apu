@@ -32,6 +32,7 @@ jobs:
         git clone --depth 1 https://git.openwrt.org/openwrt/openwrt.git
         echo ${BRANCH}
         git clone -b ${BRANCH} --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
+        df -h
     - name: build
       if: steps.check-rev.outputs.BUILD
       shell: bash
