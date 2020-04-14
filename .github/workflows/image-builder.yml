@@ -57,9 +57,15 @@ jobs:
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone --depth 1 -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        rm -rf ..?* .[!.]* *
+        rm -rf *
         mv -f ../openwrt/bin/* .
-        tree -H '.' -L 1 --noreport --charset utf-8 > index.html
+        find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
+        find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
+        find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
+        sed -i -e 's#<a href="../0_index.html">..</a><br>#<a href="./0_index.html">.</a><br>#g' ./0_index.html
+        find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
+        find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
+        find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
