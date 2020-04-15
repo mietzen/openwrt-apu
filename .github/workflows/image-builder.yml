@@ -34,6 +34,7 @@ jobs:
         git clone -b ${BRANCH} --depth 1 https://github.com/${GITHUB_REPOSITORY}.git
         df -h
     - name: build
+      id: build
       if: steps.check-rev.outputs.BUILD
       shell: bash
       run: |
@@ -49,7 +50,13 @@ jobs:
         cd ..
         mv -f openwrt/bin artifacts
         rm -rf openwrt
-    - name: deploy
+        echo ::set-output name=BUILD_REVISION::$(cat artifacts/targets/x86/64/version.buildinfo)
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: $ {{ steps.build.outputs.BUILD_REVISION }}
+        path: artifacts
+    - name: deploy to pages
       if: steps.check-rev.outputs.BUILD
       shell: bash
       env:
