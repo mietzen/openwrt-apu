@@ -1,7 +1,8 @@
 #!/bin/bash
 ls -al
-cd openwrt
 sudo chown $(id -u):$(id -g) .
+git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
+cd openwrt
 ./scripts/feeds update -a
 ./scripts/feeds install -a -p luci
 ./scripts/feeds install -a -p packages
