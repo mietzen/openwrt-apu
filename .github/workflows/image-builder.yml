@@ -21,9 +21,9 @@ jobs:
         echo "$rev_remote"
         rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/targets/x86/64/version.buildinfo -s | cut -d'-' -f2 | tr -d "\n")
         echo "$rev_last_build"
-        if [ "$rev_remote" != "$rev_last_build" ]; then echo ::set-output name=BUILD::true ; fi
-        if [ "$TRIGGER" == "push" ]; then echo ::set-output name=BUILD::true ; fi
-        if [ "$TRIGGER" == "pull_request" ]; then echo ::set-output name=BUILD::true ; fi
+        if [ "$rev_remote" != "$rev_last_build" ] || [ "$TRIGGER" = "pull_request" ] || [ "$TRIGGER" = "push" ]; then 
+          echo ::set-output name=BUILD::true ;
+        fi
 
     - name: Checkout config
       if: steps.check-rev.outputs.BUILD
