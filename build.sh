@@ -1,5 +1,4 @@
 #!/bin/bash
-ls -al
 sudo chown $(id -u):$(id -g) .
 git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
 cd openwrt
