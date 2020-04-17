@@ -128,7 +128,7 @@ jobs:
         curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > revision.svg
 
     - name: Deploy to pages
-      if: steps.check-rev.outputs.BUILD && "$GITHUB_EVENT_NAME" != "pull"
+      if: steps.check-rev.outputs.BUILD && github.event_name != 'pull_request'
       run: |
         pages_branch="gh-pages"
         cd ${pages_branch}
