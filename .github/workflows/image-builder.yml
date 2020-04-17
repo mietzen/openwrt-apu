@@ -36,10 +36,10 @@ jobs:
     - name: Free disk space
       if: steps.check-rev.outputs.BUILD
       run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo apt clean
-        docker rmi $(docker image ls -aq)
+        sudo swapoff -a >/dev/null 2>&1
+        sudo rm -f /swapfile >/dev/null 2>&1
+        sudo apt clean >/dev/null 2>&1
+        docker rmi $(docker image ls -aq) >/dev/null 2>&1
         df -h
         ls -al
         cd openwrt-apu && git status && cd ..
