@@ -104,7 +104,7 @@ jobs:
         mv -f openwrt/bin artifacts
         rm -rf openwrt
 
-    - name: Deploy to pages
+    - name: Prepare pages
       if: steps.check-rev.outputs.BUILD
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
@@ -126,6 +126,12 @@ jobs:
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
         curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > revision.svg
+
+    - name: Deploy to pages
+      if: steps.check-rev.outputs.BUILD && "$GITHUB_EVENT_NAME" != "pull"
+      run: |
+        pages_branch="gh-pages"
+        cd ${pages_branch}
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
