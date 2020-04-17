@@ -15,9 +15,9 @@ jobs:
       run: |
         rev_remote=$(git ls-remote https://github.com/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
         echo "$rev_remote"
-        rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | cut -d'-' -f2 | tr -d "\n")
+        rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/targets/x86/64/version.buildinfo -s | cut -d'-' -f2 | tr -d "\n")
         echo "$rev_last_build"
-        if [ "$rev_remote" = "$rev_last_build" ]; then echo 'Nothing new, will not build' ; else echo ::set-output name=BUILD::true ; fi
+        if [ "$rev_remote" = "$rev_last_build" ]; then echo 'No new commits, will not build' ; else echo ::set-output name=BUILD::true ; fi
 
     - name: Checkout config
       if: steps.check-rev.outputs.BUILD
@@ -124,7 +124,7 @@ jobs:
         find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
-        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo)-blue" > revision.svg
+        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > revision.svg
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
