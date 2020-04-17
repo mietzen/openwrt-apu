@@ -14,12 +14,16 @@ jobs:
     steps:
     - name: Check for new commits
       id: check-rev
+      env:
+        TRIGGER: ${{ github.event_name }}
       run: |
         rev_remote=$(git ls-remote https://github.com/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
         echo "$rev_remote"
         rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/targets/x86/64/version.buildinfo -s | cut -d'-' -f2 | tr -d "\n")
         echo "$rev_last_build"
-        if [ "$rev_remote" = "$rev_last_build" ]; then echo 'No new commits, will not build' ; else echo ::set-output name=BUILD::true ; fi
+        if [ "$rev_remote" != "$rev_last_build" ]; then echo ::set-output name=BUILD::true ; fi
+        if [ "$TRIGGER" == "push" ]; then echo ::set-output name=BUILD::true ; fi
+        if [ "$TRIGGER" == "pull_request" ]; then echo ::set-output name=BUILD::true ; fi
 
     - name: Checkout config
       if: steps.check-rev.outputs.BUILD
