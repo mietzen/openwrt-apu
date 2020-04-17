@@ -95,11 +95,6 @@ jobs:
         sudo chown -R $(id -u):$(id -g) openwrt
         mv -f openwrt/bin artifacts
         rm -rf openwrt
-        echo "Disk space:"
-        df -h /
-        echo "Workspace:"
-        du -h -d 1 .
-        ls -alh
         echo ::set-output name=BUILD_REVISION::$(cat artifacts/targets/x86/64/version.buildinfo)
 
     - name: Upload artifact
