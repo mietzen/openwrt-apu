@@ -97,11 +97,11 @@ jobs:
         rm -rf openwrt
         echo ::set-output name=BUILD_REVISION::$(cat artifacts/targets/x86/64/version.buildinfo)
 
-    - name: Upload artifact
+    - name: Upload artifacts
       uses: actions/upload-artifact@v1.0.0
       if: steps.check-rev.outputs.BUILD
       with:
-        name: $ {{ steps.build.outputs.BUILD_REVISION }}
+        name: ${{ steps.build.outputs.BUILD_REVISION }}
         path: artifacts
 
     - name: Deploy to pages
@@ -124,7 +124,7 @@ jobs:
         find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
-        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo)-blue" > revision.svg
+        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > revision.svg
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"

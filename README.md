@@ -1,18 +1,31 @@
-# WIP: My [OpenWRT](https://openwrt.org/) Setup for the [PC-Engines apu2](https://www.pcengines.ch/apu2.htm)
+# WIP: My [OpenWRT](https://openwrt.org/) Setup for the [PC-Engines APU2](https://www.pcengines.ch/apu2.htm)
 
 ## Download latest Image nightly build from OpenWRT Master:
 
-![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master&event=schedule)  
-OpenWRT revision r12976-d0cb6e995b
+[![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master&event=schedule)](https://github.com/ngerke/openwrt-apu/actions?query=workflow%3AOpenWRT-Master+event%3Aschedule)
+[![Last Build](https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/revision.svg?sanitize=true)](https://ngerke.github.io/openwrt-apu/)
 
 [Download](https://ngerke.github.io/openwrt-apu/)
 
 ## What's this?
 
-This is my personal Setup/Image for a OpenWRT installation on the apu2 with docker. Why? Because the apu has more than enough power to also run traefik and pihole along with OpenWRT and function as ingress node for my small home cluster.  
-My image has all the apu2 + WLE600VX specific packages installed, as well as the some packages I need for my Setup:  
-`luci, collectd, curl, docker-ce, fdisk, wireguard`
-It's also compiled with `CONFIG_KERNEL_DEVMEM=y` and `CONFIG_TARGET_OPTIMIZATION=”-Os -pipe -march=btver2“`.
+This is my personal Setup/Image for a OpenWRT installation on the APU2 with docker. Why? Because the apu has more than enough power to also run traefik and pihole along with OpenWRT and function as ingress node for my small home cluster.  
+The image has all the APU2 + WLE600VX specific packages installed.
+It's also compiled with the following settings:
+
+```
+CONFIG_DOCKER_KERNEL_OPTIONS=y
+CONFIG_DOCKER_NET_ENCRYPT=y
+CONFIG_DOCKER_NET_MACVLAN=y
+CONFIG_DOCKER_NET_OVERLAY=y
+CONFIG_DOCKER_NET_TFTP=y
+CONFIG_DOCKER_RES_SHAPE=y
+CONFIG_DOCKER_SECCOMP=y
+CONFIG_DOCKER_STO_BTRFS=y
+CONFIG_DOCKER_STO_EXT4=y
+CONFIG_KERNEL_DEVMEM=y
+CONFIG_TARGET_OPTIMIZATION=”-Os -pipe -march=btver2“
+```
 
 ### Hardware
 
