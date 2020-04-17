@@ -2,7 +2,7 @@
 
 ## Download latest Image nightly build from OpenWRT Master:
 
-[![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master&event=schedule)](https://github.com/ngerke/openwrt-apu/actions?query=workflow%3AOpenWRT-Master+event%3Aschedule)
+[![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT-Master/badge.svg?branch=master)](https://github.com/ngerke/openwrt-apu/actions?query=workflow%3AOpenWRT-Master+event%3Aschedule)
 [![Last Build](https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/revision.svg?sanitize=true)](https://ngerke.github.io/openwrt-apu/)
 
 [Download](https://ngerke.github.io/openwrt-apu/)
