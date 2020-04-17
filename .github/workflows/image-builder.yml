@@ -91,8 +91,8 @@ jobs:
         chmod +x ./openwrt-apu/build.sh
         docker pull openwrtorg/imagebuilder
         docker run --rm -v ${GITHUB_WORKSPACE}:/home/build/openwrt openwrtorg/imagebuilder ./openwrt-apu/build.sh
+        sudo chown -R $(id -u):$(id -g) .
         ls -al
-        sudo chown -R $(id -u):$(id -g) openwrt
         mv -f openwrt/bin artifacts
         rm -rf openwrt
         echo ::set-output name=BUILD_REVISION::$(cat artifacts/targets/x86/64/version.buildinfo)
