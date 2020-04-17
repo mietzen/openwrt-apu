@@ -32,7 +32,8 @@ jobs:
         sudo rm -f /swapfile >/dev/null 2>&1
         sudo apt clean >/dev/null 2>&1
         docker rmi $(docker image ls -aq) >/dev/null 2>&1
-        sudo du -ha --exclude=/{proc,sys,dev,mnt,media,run} /* | sort -h -r | head -n 30
+        echo "Installed apt pkgs:"
+        comm -23 <(aptitude search '~i !~M' -F '%p' | sed "s/ *$//" | sort -u) <(gzip -dc /var/log/installer/initial-status.gz | sed -n 's/^Package: //p' | sort -u)
 
     - name: Host info
       if: steps.check-rev.outputs.BUILD
