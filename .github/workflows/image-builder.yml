@@ -34,6 +34,7 @@ jobs:
         docker rmi $(docker image ls -aq) >/dev/null 2>&1
         echo "Installed apt pkgs:"
         apt list --installed
+        zcat /var/log/apt/history.log.*.gz | cat - /var/log/apt/history.log | grep -Po '^Commandline: apt-get install (?!.*--reinstall)\K.*'
 
     - name: Host info
       if: steps.check-rev.outputs.BUILD
