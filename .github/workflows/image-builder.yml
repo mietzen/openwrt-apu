@@ -33,7 +33,7 @@ jobs:
         sudo apt clean >/dev/null 2>&1
         docker rmi $(docker image ls -aq) >/dev/null 2>&1
         echo "Installed apt pkgs:"
-        comm -23 <(aptitude search '~i !~M' -F '%p' | sed "s/ *$//" | sort -u) <(gzip -dc /var/log/installer/initial-status.gz | sed -n 's/^Package: //p' | sort -u)
+        apt list --installed
 
     - name: Host info
       if: steps.check-rev.outputs.BUILD
