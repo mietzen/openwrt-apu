@@ -10,18 +10,30 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-
-    - name: check for new commits
+    - name: Check for new commits
       id: check-rev
       run: |
-        rev_remote=$(git ls-remote https://git.openwrt.org/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
+        rev_remote=$(git ls-remote https://github.com/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
         echo "$rev_remote"
         rev_last_build=$(curl https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/version.buildinfo -s | cut -d'-' -f2 | tr -d "\n")
         echo "$rev_last_build"
         if [ "$rev_remote" = "$rev_last_build" ]; then echo 'Nothing new, will not build' ; else echo ::set-output name=BUILD::true ; fi
 
-    - name: free disk space
+    - name: Checkout config
+      if: steps.check-rev.outputs.BUILD
+      uses: actions/checkout@v2
+      with:
+        path: 'openwrt-apu'
+
+    - name: Checkout OpenWRT master
+      if: steps.check-rev.outputs.BUILD
+      uses: actions/checkout@v2
+      with:
+        repository: 'openwrt/openwrt'
+        ref: 'master'
+        path: 'openwrt'
+
+    - name: Free disk space
       if: steps.check-rev.outputs.BUILD
       run: |
         sudo swapoff -a
@@ -31,12 +43,7 @@ jobs:
         df -h
         ls -al
 
-    - name: checkout latest OpenWRT master
-      if: steps.check-rev.outputs.BUILD
-      run: |
-        git clone https://git.openwrt.org/openwrt/openwrt.git
-
-    - name: build
+    - name: Build
       id: build
       if: steps.check-rev.outputs.BUILD
       run: |
@@ -48,13 +55,13 @@ jobs:
 
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
+      if: steps.check-rev.outputs.BUILD
       with:
         name: $ {{ steps.build.outputs.BUILD_REVISION }}
         path: artifacts
 
-    - name: deploy to pages
+    - name: Deploy to pages
       if: steps.check-rev.outputs.BUILD
-      shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
@@ -80,7 +87,7 @@ jobs:
         git diff-index --quiet ${pages_branch} || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
         git push "${repo_url}" HEAD:${pages_branch}
 
-    - name: post
+    - name: On failure
       if: failure()
       run: |
         ls -al
