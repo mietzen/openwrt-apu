@@ -48,6 +48,7 @@ jobs:
       if: steps.check-rev.outputs.BUILD
       run: |
         chmod +x ./build.sh
+        docker pull openwrtorg/imagebuilder
         docker run --rm -v ${GITHUB_WORKSPACE}:/home/build/openwrt -it openwrtorg/imagebuilder ./build.sh
         mv -f openwrt/bin artifacts
         rm -rf openwrt
