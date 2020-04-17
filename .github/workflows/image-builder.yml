@@ -63,7 +63,7 @@ jobs:
           php7.4-mbstring php7.4-mysql php7.4-odbc php7.4-opcache php7.4-pgsql php7.4-phpdbg \
           php7.4-pspell php7.4-readline php7.4-snmp php7.4-soap php7.4-sqlite3 php7.4-sybase \
           php7.4-tidy php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php-amqp php-apcu \
-          php-igbinary php-memcache php-memcached php-mongodb php-redis php-xdebug phpaml \
+          php-igbinary php-memcache php-memcached php-mongodb php-redis php-xdebug \
           php-zmq snmp pollinate libpq-dev postgresql-client powershell ruby-full \
           sphinxsearch subversion mongodb-org -yq
         sudo apt-get autoremove -y
