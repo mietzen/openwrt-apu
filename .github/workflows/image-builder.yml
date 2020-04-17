@@ -42,12 +42,14 @@ jobs:
         docker rmi $(docker image ls -aq)
         df -h
         ls -al
+        cd openwrt-apu && git status && cd ..
+        cd openwrt && git status && cd ..
 
     - name: Build
       id: build
       if: steps.check-rev.outputs.BUILD
       run: |
-        chmod +x ./build.sh
+        chmod +x ./openwrt-apu/build.sh
         docker pull openwrtorg/imagebuilder
         docker run --rm -v ${GITHUB_WORKSPACE}:/home/build/openwrt -it openwrtorg/imagebuilder ./build.sh
         mv -f openwrt/bin artifacts
