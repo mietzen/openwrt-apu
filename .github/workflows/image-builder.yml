@@ -58,6 +58,7 @@ jobs:
         git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
         cd openwrt
         echo $(git rev-parse HEAD | awk '{print $1=substr($1,1,10)}') >> ../build.sha
+        cat ../build.sha
 
     - name: Build
       run: |
