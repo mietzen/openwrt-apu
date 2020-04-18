@@ -9,8 +9,10 @@ on:
     - cron:  '0 0 * * *'
 
 jobs:
-  new-commits:
+  commits:
     runs-on: ubuntu-latest
+    outputs:
+      new: ${{ steps.check.outputs.NEW }}
     steps:
     - name: Check for new commits
       id: check
@@ -25,8 +27,8 @@ jobs:
 
   build-image:
     runs-on: ubuntu-latest
-    needs: new-commits
-    if: jobs.new-commits.steps.check.outputs.NEW
+    needs: commits
+    if: ${{needs.commits.outputs.new}}
     steps:
     - name: Checkout config
       uses: actions/checkout@v2
