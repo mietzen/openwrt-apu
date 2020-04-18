@@ -26,7 +26,7 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     needs: new-commits
-    if: new-commits.check.outputs.NEW
+    if: jobs.new-commits.steps.check.outputs.NEW
     steps:
     - name: Checkout config
       uses: actions/checkout@v2
