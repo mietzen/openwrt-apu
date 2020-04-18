@@ -1,4 +1,4 @@
-name: OpenWRT-Master
+name: OpenWRT APU2 Image Builder
 on:
   push:
     branches: [ master ]
@@ -9,77 +9,41 @@ on:
     - cron:  '0 0 * * *'
 
 jobs:
-  build-image:
+  commits:
     runs-on: ubuntu-latest
+    name: "Check for new commits"
+    outputs:
+      new: ${{ steps.check.outputs.NEW }}
     steps:
-    - name: Check for new commits
-      id: check-rev
+    - name: Check for new commits on OpenWRT Master
+      id: check
       run: |
         rev_remote=$(git ls-remote https://github.com/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
         echo "$rev_remote"
         rev_last_build=$(curl "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/gh-pages/targets/x86/64/version.buildinfo" -s | cut -d'-' -f2 | tr -d "\n")
         echo "$rev_last_build"
-        if [ "$rev_remote" != "$rev_last_build" ] || [ "$GITHUB_EVENT_NAME" = "pull_request" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then 
-          echo ::set-output name=BUILD::true ;
+        if [ "$rev_remote" != "$rev_last_build" ] || [ "$GITHUB_EVENT_NAME" = "pull_request" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then
+          echo ::set-output name=NEW::true ;
         fi
 
+  build-image:
+    runs-on: ubuntu-latest
+    name: "Build Image"
+    needs: commits
+    if: ${{needs.commits.outputs.new}}
+    steps:
     - name: Checkout config
-      if: steps.check-rev.outputs.BUILD
       uses: actions/checkout@v2
       with:
         path: 'openwrt-apu'
 
     - name: Free disk space
-      if: steps.check-rev.outputs.BUILD
       run: |
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
-        sudo mkswap /swapfile
-        sudo swapon -a
-        sudo apt-get remove aria2 ansible azure-cli shellcheck rpm xorriso zsync \
-          clang-6.0 lldb-6.0 lld-6.0 clang-format-6.0 clang-8 lldb-8 lld-8 clang-format-8 \
-          clang-9 lldb-9 lld-9 clangd-9 clang-format-9 dotnet-sdk-3.0 dotnet-sdk-3.1=3.1.101-1 \
-          esl-erlang firefox g++-8 g++-9 gfortran-8 gfortran-9 google-chrome-stable \
-          google-cloud-sdk ghc-8.0.2 ghc-8.2.2 ghc-8.4.4 ghc-8.6.2 ghc-8.6.3 ghc-8.6.4 \
-          ghc-8.6.5 ghc-8.8.1 ghc-8.8.2 ghc-8.8.3 ghc-8.10.1 cabal-install-2.0 cabal-install-2.2 \
-          cabal-install-2.4 cabal-install-3.0 cabal-install-3.2 heroku imagemagick \
-          libmagickcore-dev libmagickwand-dev libmagic-dev ant ant-optional kubectl \
-          mercurial apt-transport-https mono-complete mysql-client libmysqlclient-dev \
-          mysql-server mssql-tools unixodbc-dev yarn bazel chrpath libssl-dev libxft-dev \
-          libfreetype6 libfreetype6-dev libfontconfig1 libfontconfig1-dev php7.1 php7.1-bcmath \
-          php7.1-bz2 php7.1-cgi php7.1-cli php7.1-common php7.1-curl php7.1-dba php7.1-dev \
-          php7.1-enchant php7.1-fpm php7.1-gd php7.1-gmp php7.1-imap php7.1-interbase php7.1-intl \
-          php7.1-json php7.1-ldap php7.1-mbstring php7.1-mcrypt php7.1-mysql php7.1-odbc \
-          php7.1-opcache php7.1-pgsql php7.1-phpdbg php7.1-pspell php7.1-readline php7.1-recode \
-          php7.1-snmp php7.1-soap php7.1-sqlite3 php7.1-sybase php7.1-tidy php7.1-xml \
-          php7.1-xmlrpc php7.1-xsl php7.1-zip php7.2 php7.2-bcmath php7.2-bz2 php7.2-cgi \
-          php7.2-cli php7.2-common php7.2-curl php7.2-dba php7.2-dev php7.2-enchant php7.2-fpm \
-          php7.2-gd php7.2-gmp php7.2-imap php7.2-interbase php7.2-intl php7.2-json php7.2-ldap \
-          php7.2-mbstring php7.2-mysql php7.2-odbc php7.2-opcache php7.2-pgsql php7.2-phpdbg \
-          php7.2-pspell php7.2-readline php7.2-recode php7.2-snmp php7.2-soap php7.2-sqlite3 \
-          php7.2-sybase php7.2-tidy php7.2-xml php7.2-xmlrpc php7.2-xsl php7.2-zip php7.3 \
-          php7.3-bcmath php7.3-bz2 php7.3-cgi php7.3-cli php7.3-common php7.3-curl php7.3-dba \
-          php7.3-dev php7.3-enchant php7.3-fpm php7.3-gd php7.3-gmp php7.3-imap php7.3-interbase \
-          php7.3-intl php7.3-json php7.3-ldap php7.3-mbstring php7.3-mysql php7.3-odbc \
-          php7.3-opcache php7.3-pgsql php7.3-phpdbg php7.3-pspell php7.3-readline php7.3-recode \
-          php7.3-snmp php7.3-soap php7.3-sqlite3 php7.3-sybase php7.3-tidy php7.3-xml \
-          php7.3-xmlrpc php7.3-xsl php7.3-zip php7.4 php7.4-bcmath php7.4-bz2 php7.4-cgi \
-          php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-enchant php7.4-fpm \
-          php7.4-gd php7.4-gmp php7.4-imap php7.4-interbase php7.4-intl php7.4-json php7.4-ldap \
-          php7.4-mbstring php7.4-mysql php7.4-odbc php7.4-opcache php7.4-pgsql php7.4-phpdbg \
-          php7.4-pspell php7.4-readline php7.4-snmp php7.4-soap php7.4-sqlite3 php7.4-sybase \
-          php7.4-tidy php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php-amqp php-apcu \
-          php-igbinary php-memcache php-memcached php-mongodb php-redis php-xdebug \
-          php-zmq snmp pollinate libpq-dev postgresql-client powershell ruby-full \
-          sphinxsearch subversion mongodb-org -yq
-        sudo apt-get autoremove -y
-        sudo apt-get autoclean -y
-        sudo rm -rf /usr/local/lib/android
-        docker rmi $(docker image ls -aq)
+        cd openwrt-apu
+        chmod +x ./free-space.sh
+        ./free-space.sh
 
     - name: Host info
-      if: steps.check-rev.outputs.BUILD
       run: |
         echo "Disk space:"
         df -h /
@@ -88,12 +52,19 @@ jobs:
         echo "Repo HEAD:"
         cd openwrt-apu && git rev-parse HEAD && cd ..
 
-    - name: Build
-      id: build
-      if: steps.check-rev.outputs.BUILD
+    - name: Clone OpenWRT
+      id: clone-openwrt
       run: |
+        git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
+        cd openwrt
+        echo $(git rev-parse HEAD | awk '{print $1=substr($1,1,10)}') >> ../build.rev
+        cat ../build.rev
+
+    - name: Build
+      run: |
+        BUILD_HASH=$(cat ./build.rev)
         REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d"/" -f2)
-        REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}
+        REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_HASH}
         echo 'CONFIG_IMAGEOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSIONOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-docker
@@ -104,20 +75,22 @@ jobs:
         mv -f openwrt/bin artifacts
         rm -rf openwrt
 
-    - name: Prepare pages
-      if: steps.check-rev.outputs.BUILD
+    - name: Prepare and deploy pages
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
+        BUILD_HASH=$(cat ./build.rev)
         sudo apt-get update -q
         sudo apt-get install tree -q -y
         pages_branch="gh-pages"
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        # Reset to empty init commit, we wont save the history of gh-pages due to 1 GB quota
+        # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
         git reset --hard $(git rev-list --max-parents=0 HEAD)
-        mv -f ../artifacts/* .
+        mkdir ${BUILD_HASH}
+        mv -f ../artifacts/* ./${BUILD_HASH}
+        cd ${BUILD_HASH}
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
         find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
         find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
@@ -125,27 +98,40 @@ jobs:
         find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
-        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > revision.svg
-
-    - name: Deploy to pages
-      if: steps.check-rev.outputs.BUILD && github.event_name != 'pull_request'
-      run: |
-        pages_branch="gh-pages"
-        cd ${pages_branch}
+        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > ../revision.svg
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        git diff-index --quiet ${pages_branch} || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
-        git push -f "${repo_url}" HEAD:${pages_branch}
+        if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+          git commit -m "nightly build"
+        else
+          git commit -m "integration build"
+        fi
+        if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          git push -f "${repo_url}" HEAD:${pages_branch}
+        fi
 
     - name: On failure
       if: failure()
       run: |
         echo "Disk space:"
+        echo "-------------------------------"
         df -h /
-        echo "Workspace:"
-        du -h -d 1 .
+        echo ""
         echo "Repo HEAD:"
-        cd openwrt-apu && git rev-parse HEAD && cd ..
+        echo "-------------------------------"
+        cd openwrt-apu
+        git rev-parse HEAD
+        echo ""
+        echo "Repo Content:"
+        echo "-------------------------------"
+        ls -al
+        cd ..
+        echo ""
+        echo "Config:"
+        echo "-------------------------------"
+        cat ./openwrt-apu/.config-apu2-docker
+        echo ""
         echo "Event path:"
+        echo "-------------------------------"
         cat ${GITHUB_EVENT_PATH}
