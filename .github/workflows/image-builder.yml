@@ -39,6 +39,7 @@ jobs:
 
     - name: Free disk space
       run: |
+        cd openwrt-apu
         chmod +x ./free-space.sh
         ./free-space.sh
 
@@ -115,22 +116,23 @@ jobs:
       if: failure()
       run: |
         echo "Disk space:"
-        df -h /
         echo "-------------------------------"
+        df -h /
         echo ""
         echo "Repo HEAD:"
+        echo "-------------------------------"
         cd openwrt-apu
         git rev-parse HEAD
-        echo "-------------------------------"
         echo ""
         echo "Repo Content:"
+        echo "-------------------------------"
         ls -al
         cd ..
-        echo "-------------------------------"
         echo ""
         echo "Config:"
-        cat ./openwrt-apu/.config-apu2-docker
         echo "-------------------------------"
+        cat ./openwrt-apu/.config-apu2-docker
         echo ""
         echo "Event path:"
+        echo "-------------------------------"
         cat ${GITHUB_EVENT_PATH}
