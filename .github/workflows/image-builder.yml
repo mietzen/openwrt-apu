@@ -90,7 +90,6 @@ jobs:
         git reset --hard $(git rev-list --max-parents=0 HEAD)
         mkdir ${BUILD_HASH}
         mv -f ../artifacts/* ./${BUILD_HASH}
-        cd ${BUILD_HASH}
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
         find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
         find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
