@@ -11,10 +11,11 @@ on:
 jobs:
   commits:
     runs-on: ubuntu-latest
+    name: "Check for new commits"
     outputs:
       new: ${{ steps.check.outputs.NEW }}
     steps:
-    - name: Check for new commits
+    - name: Check for new commits on OpenWRT Master
       id: check
       run: |
         rev_remote=$(git ls-remote https://github.com/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
@@ -27,6 +28,7 @@ jobs:
 
   build-image:
     runs-on: ubuntu-latest
+    name: "Build OpenWRT Image"
     needs: commits
     if: ${{needs.commits.outputs.new}}
     steps:
@@ -112,13 +114,23 @@ jobs:
     - name: On failure
       if: failure()
       run: |
-        echo "Config:"
-        cat ./openwrt-apu/.config-apu2-docker
         echo "Disk space:"
         df -h /
-        echo "Workspace:"
-        du -h -d 1 .
+        echo "-------------------------------"
+        echo ""
         echo "Repo HEAD:"
-        cd openwrt-apu && git rev-parse HEAD && cd ..
+        cd openwrt-apu
+        git rev-parse HEAD
+        echo "-------------------------------"
+        echo ""
+        echo "Repo Content:"
+        ls -al
+        cd ..
+        echo "-------------------------------"
+        echo ""
+        echo "Config:"
+        cat ./openwrt-apu/.config-apu2-docker
+        echo "-------------------------------"
+        echo ""
         echo "Event path:"
         cat ${GITHUB_EVENT_PATH}
