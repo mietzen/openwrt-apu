@@ -57,12 +57,12 @@ jobs:
       run: |
         git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
         cd openwrt
-        echo $(git rev-parse HEAD | awk '{print $1=substr($1,1,10)}') >> ../build.sha
-        cat ../build.sha
+        echo $(git rev-parse HEAD | awk '{print $1=substr($1,1,10)}') >> ../build.rev
+        cat ../build.rev
 
     - name: Build
       run: |
-        BUILD_HASH=$(cat ./build.sha)
+        BUILD_HASH=$(cat ./build.rev)
         REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d"/" -f2)
         REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_HASH}
         echo 'CONFIG_IMAGEOPT=y' >> ./openwrt-apu/.config-apu2-docker
@@ -79,7 +79,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
-        BUILD_HASH=$(cat ./build.sha)
+        BUILD_HASH=$(cat ./build.rev)
         sudo apt-get update -q
         sudo apt-get install tree -q -y
         pages_branch="gh-pages"
@@ -108,9 +108,9 @@ jobs:
           git commit -m "integration build"
         fi
         git push -f "${repo_url}" HEAD:${pages_branch}
-        #if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-        #  git push -f "${repo_url}" HEAD:${pages_branch}
-        #fi
+        if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          git push -f "${repo_url}" HEAD:${pages_branch}
+        fi
 
     - name: On failure
       if: failure()
