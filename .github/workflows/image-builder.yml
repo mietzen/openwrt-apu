@@ -19,7 +19,7 @@ jobs:
         echo "$rev_remote"
         rev_last_build=$(curl "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/gh-pages/targets/x86/64/version.buildinfo" -s | cut -d'-' -f2 | tr -d "\n")
         echo "$rev_last_build"
-        if [ "$rev_remote" != "$rev_last_build" ] || [ "$GITHUB_EVENT_NAME" = "pull_request" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then 
+        if [ "$rev_remote" != "$rev_last_build" ] || [ "$GITHUB_EVENT_NAME" = "pull_request" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then
           echo ::set-output name=BUILD::true ;
         fi
 
@@ -88,12 +88,21 @@ jobs:
         echo "Repo HEAD:"
         cd openwrt-apu && git rev-parse HEAD && cd ..
 
-    - name: Build
-      id: build
+    - name: Clone OpenWRT
+      id: clone-openwrt
       if: steps.check-rev.outputs.BUILD
       run: |
+        git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
+        cd openwrt
+        echo ::set-output name=BUILD_HASH::$(git rev-parse HEAD | awk '{print $1=substr($1,1,10)}') ;
+
+    - name: Build
+      if: steps.check-rev.outputs.BUILD
+      env:
+        BUILD_HASH: ${{ steps.clone-openwrt.BUILD_HASH }}
+      run: |
         REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d"/" -f2)
-        REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}
+        REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_HASH}
         echo 'CONFIG_IMAGEOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSIONOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-docker
@@ -104,9 +113,10 @@ jobs:
         mv -f openwrt/bin artifacts
         rm -rf openwrt
 
-    - name: Prepare pages
+    - name: Prepare and deploy pages
       if: steps.check-rev.outputs.BUILD
       env:
+        BUILD_HASH: ${{ steps.clone-openwrt.BUILD_HASH }}
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
         sudo apt-get update -q
@@ -115,9 +125,11 @@ jobs:
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        # Reset to empty init commit, we wont save the history of gh-pages due to 1 GB quota
+        # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
         git reset --hard $(git rev-list --max-parents=0 HEAD)
-        mv -f ../artifacts/* .
+        mkdir ${BUILD_HASH}
+        mv -f ../artifacts/* ./${BUILD_HASH}
+        cd ${BUILD_HASH}
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
         find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
         find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
@@ -126,21 +138,24 @@ jobs:
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
         curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > revision.svg
-
-    - name: Deploy to pages
-      if: steps.check-rev.outputs.BUILD && github.event_name != 'pull_request'
-      run: |
-        pages_branch="gh-pages"
-        cd ${pages_branch}
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        git diff-index --quiet ${pages_branch} || git commit -m "$(date '+%d/%m/%Y %H:%M:%S') nightly build"
+        if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+          git commit -m "nightly build"
+        else
+          git commit -m "integration build"
+        fi
+        #if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+        #  git push -f "${repo_url}" HEAD:${pages_branch}
+        #fi
         git push -f "${repo_url}" HEAD:${pages_branch}
 
     - name: On failure
       if: failure()
       run: |
+        echo "Config:"
+        cat ./openwrt-apu/.config-apu2-docker
         echo "Disk space:"
         df -h /
         echo "Workspace:"

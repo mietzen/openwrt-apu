@@ -1,6 +1,5 @@
 #!/bin/bash
-sudo chown $(id -u):$(id -g) .
-git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
+sudo chown -R $(id -u):$(id -g) .
 cd openwrt
 ./scripts/feeds update
 ./scripts/feeds install -a -p luci
