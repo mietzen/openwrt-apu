@@ -80,6 +80,14 @@ jobs:
         docker pull openwrtorg/imagebuilder
         docker run --rm -v ${GITHUB_WORKSPACE}:/home/build/openwrt openwrtorg/imagebuilder ./openwrt-apu/build.sh
         sudo chown -R $(id -u):$(id -g) .
+        if grep -q -i error build.log; then
+          echo "-------------------------------"
+          echo 'Build Error!'
+          echo "-------------------------------"
+          grep -i error build.log
+          echo "-------------------------------"
+          exit -1
+        fi;
         mv -f openwrt/bin artifacts
         rm -rf openwrt
 

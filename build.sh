@@ -9,5 +9,5 @@ cd openwrt
 cp ../openwrt-apu/.config-apu2-docker .config
 make defconfig
 IGNORE_ERRORS=1
-make -j`nproc` download check world
+make -j`nproc` V=s download check world 2>&1 | tee ../build.log
 exit 0
