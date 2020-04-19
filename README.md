@@ -3,9 +3,9 @@
 ## Download latest Image nightly build from OpenWRT Master:
 
 [![OpenWRT-Master](https://github.com/ngerke/openwrt-apu/workflows/OpenWRT%20APU2%20Image%20Builder/badge.svg?branch=master)](https://github.com/ngerke/openwrt-apu/actions?query=workflow%3A%22OpenWRT+APU2+Image+Builder%22+branch%3Amaster)
-[![Last Build](https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/revision.svg?sanitize=true)](https://ngerke.github.io/openwrt-apu/index.html)
+[![Last Build](https://raw.githubusercontent.com/ngerke/openwrt-apu/gh-pages/revision.svg?sanitize=true)](https://ngerke.github.io/openwrt-apu/latest-master.html)
 
-[Download](https://ngerke.github.io/openwrt-apu/index.html)
+[Download latest build](https://ngerke.github.io/openwrt-apu/latest-master.html)
 
 ## What's this?
 
