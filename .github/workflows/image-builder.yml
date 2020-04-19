@@ -71,6 +71,8 @@ jobs:
         echo 'CONFIG_VERSIONOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_PER_FEED_REPO=y' >> ./openwrt-apu/.config-apu2-docker
+        echo '# CONFIG_FEED_routing is not set'
+        echo '# CONFIG_FEED_telephony is not set'
         echo ''
         cat ./openwrt-apu/.config-apu2-docker
         echo ''
