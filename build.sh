@@ -8,6 +8,5 @@ cd openwrt
 ./scripts/feeds install -a -p telephony
 cp ../openwrt-apu/.config-apu2-docker .config
 make defconfig
-IGNORE_ERRORS=1
 make -j`nproc` V=s download check world 2>&1 | tee ../build.log
 exit 0
