@@ -20,7 +20,7 @@ jobs:
       run: |
         rev_remote=$(git ls-remote https://github.com/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
         echo "$rev_remote"
-        rev_last_build=$(curl "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/gh-pages/targets/x86/64/version.buildinfo" -s | cut -d'-' -f2 | tr -d "\n")
+        rev_last_build=$(curl "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/gh-pages/latest-build.rev" -s | cut -d'-' -f2 | tr -d "\n")
         echo "$rev_last_build"
         if [ "$rev_remote" != "$rev_last_build" ] || [ "$GITHUB_EVENT_NAME" = "pull_request" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then
           echo ::set-output name=NEW::true ;
@@ -57,15 +57,16 @@ jobs:
       run: |
         git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
         cd openwrt
-        echo $(git rev-parse HEAD | awk '{print $1=substr($1,1,10)}') >> ../build.rev
-        cat ../build.rev
+        echo $(./scripts/getver.sh) >> ../latest-build.rev
+        cat ../latest-build.rev
 
     - name: Build
       run: |
-        BUILD_HASH=$(cat ./build.rev)
+        BUILD_REV=$(cat ./latest-build.rev)
         REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d"/" -f2)
-        REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_HASH}
-        echo 'CONFIG_IMAGEOPT=y' >> ./openwrt-apu/.config-apu2-docker
+        REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_REV}
+        cp ./openwrt-apu/latest-master.html.in ./latest-master.html
+        sed -i -e 's#%URL%#'$REPO_URL'/targets/x86/64#g' ./latest-master.html
         echo 'CONFIG_VERSIONOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-docker
         chmod +x ./openwrt-apu/build.sh
@@ -79,7 +80,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
-        BUILD_HASH=$(cat ./build.rev)
+        BUILD_REV=$(cat ./latest-build.rev)
         sudo apt-get update -q
         sudo apt-get install tree -q -y
         pages_branch="gh-pages"
@@ -88,9 +89,8 @@ jobs:
         cd ${pages_branch}
         # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
         git reset --hard $(git rev-list --max-parents=0 HEAD)
-        mkdir ${BUILD_HASH}
-        mv -f ../artifacts/* ./${BUILD_HASH}
-        cd ${BUILD_HASH}
+        mkdir ${BUILD_REV}
+        mv -f ../artifacts/* ./${BUILD_REV}
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
         find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
         find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
@@ -98,7 +98,9 @@ jobs:
         find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
-        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat targets/x86/64/version.buildinfo | sed 's/-/_/g')-blue" > ../revision.svg
+        cp ../latest-master.html .
+        cp ../latest-build.rev .
+        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat ./latest-build.rev | sed 's/-/_/g')-blue" > ./revision.svg
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
