@@ -12,5 +12,6 @@ cp ../openwrt-apu/.config-apu2-docker .config
 ./scripts/feeds install -a -p routing
 ./scripts/feeds install -a -p telephony
 make defconfig
-make -j`nproc` 2>&1 | tee ../build.log
+make clean
+make -j`nproc` download world 2>&1 | tee ../build.log
 exit 0
