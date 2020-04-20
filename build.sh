@@ -7,7 +7,10 @@ curl -s -o feeds.conf.default https://downloads.openwrt.org/snapshots/targets/x8
 rm -f .config
 cp ../openwrt-apu/.config-apu2-docker .config
 ./scripts/feeds update
-./scripts/feeds install -a
+./scripts/feeds install -a -p luci
+./scripts/feeds install -a -p packages
+./scripts/feeds install -a -p routing
+./scripts/feeds install -a -p telephony
 make defconfig
 make -j`nproc` download world 2>&1 | tee ../build.log
 exit 0
