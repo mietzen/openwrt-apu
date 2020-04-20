@@ -67,6 +67,7 @@ jobs:
         REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_REV}
         cp ./openwrt-apu/latest-master.html.in ./latest-master.html
         sed -i -e 's#%URL%#'$REPO_URL'/targets/x86/64#g' ./latest-master.html
+        echo '' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_IMAGEOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSIONOPT=y' >> ./openwrt-apu/.config-apu2-docker
         echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-docker
@@ -81,11 +82,6 @@ jobs:
         docker run --rm -v ${GITHUB_WORKSPACE}:/home/build/openwrt openwrtorg/imagebuilder ./openwrt-apu/build.sh
         sudo chown -R $(id -u):$(id -g) .
         if grep -q -i error build.log; then
-          echo "-------------------------------"
-          echo 'Build Error!'
-          echo "-------------------------------"
-          grep -i error build.log
-          echo "-------------------------------"
           exit -1
         fi;
         mv -f openwrt/bin artifacts
@@ -131,6 +127,10 @@ jobs:
     - name: On failure
       if: failure()
       run: |
+        echo 'Build Error!'
+        echo "-------------------------------"
+        grep -i error build.log
+        echo ""
         echo "Disk space:"
         echo "-------------------------------"
         df -h /
