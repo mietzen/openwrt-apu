@@ -99,7 +99,14 @@ jobs:
         git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
         # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
-        git reset --hard $(git rev-list --max-parents=0 HEAD)
+        git reset --soft $(git rev-list --max-parents=0 HEAD)
+        # Keep last three builds
+        if [ $(find r* | wc -l) > 2 ]; then
+          rm -rf $(find r* | head -n 1);
+        fi;
+        rm latest-build.rev
+        rm revision.svg
+        find . -name '*.html' -exec rm {} \;
         mkdir ${BUILD_REV}
         mv -f ../artifacts/* ./${BUILD_REV}
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
