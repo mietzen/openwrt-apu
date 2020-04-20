@@ -57,6 +57,7 @@ CONFIG_PACKAGE_collectd-mod-uptime=m
 CONFIG_PACKAGE_collectd-mod-users=m
 CONFIG_PACKAGE_collectd-mod-wireless=m
 CONFIG_PACKAGE_shadow-utils=m
+CONFIG_PACKAGE_shadow=m
 CONFIG_TARGET_OPTIMIZATION="-Os -pipe -march=btver2"
 CONFIG_TARGET_OPTIONS=y
 # CONFIG_TARGET_ROOTFS_SQUASHFS is not set
