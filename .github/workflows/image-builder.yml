@@ -101,8 +101,12 @@ jobs:
         # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
         git reset --soft $(git rev-list --max-parents=0 HEAD)
         # Keep last three builds
-        if [ $(find r* | wc -l) > 2 ]; then
-          rm -rf $(find r* | head -n 1);
+        if $(ls | grep -q $BUILD_REV); then
+          rm -rf $BUILD_REV;
+        fi;
+        old_revisions=$(ls | grep -E ^r[[:digit:]]{5}-[[:alnum:]]{10}$ | wc -l || echo 0)
+        if [ $old_revisions -gt 2 ]; then
+          rm -rf $(ls | grep -E ^r[[:digit:]]{5}-[[:alnum:]]{10}$ | head -n 1);
         fi;
         rm latest-build.rev
         rm revision.svg
@@ -123,9 +127,9 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
         if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-          git commit -m "nightly build"
+          git commit -q -m "nightly build"
         else
-          git commit -m "integration build"
+          git commit -q -m "integration build"
         fi
         if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
           git push -f "${repo_url}" HEAD:${pages_branch}
