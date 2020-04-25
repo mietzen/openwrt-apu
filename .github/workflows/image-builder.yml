@@ -57,6 +57,10 @@ jobs:
       run: |
         git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
         cd openwrt
+        git checkout $(curl -s https://downloads.openwrt.org/snapshots/targets/x86/64/version.buildinfo | cut -d'-' -f2)
+        rm -f feeds.conf.default
+        curl -s -o feeds.conf.default https://downloads.openwrt.org/snapshots/targets/x86/64/feeds.buildinfo
+        rm -f .config
         echo $(./scripts/getver.sh) >> ../latest-build.rev
         cat ../latest-build.rev
 
