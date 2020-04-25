@@ -67,15 +67,10 @@ jobs:
         REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_REV}
         cp ./openwrt-apu/latest-master.html.in ./latest-master.html
         sed -i -e 's#%URL%#'$REPO_URL'/targets/x86/64#g' ./latest-master.html
-        echo '' >> ./openwrt-apu/.config-apu2-docker
-        echo 'CONFIG_IMAGEOPT=y' >> ./openwrt-apu/.config-apu2-docker
-        echo 'CONFIG_VERSIONOPT=y' >> ./openwrt-apu/.config-apu2-docker
-        echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-docker
-        echo 'CONFIG_PER_FEED_REPO=y' >> ./openwrt-apu/.config-apu2-docker
-        echo '# CONFIG_FEED_routing is not set'
-        echo '# CONFIG_FEED_telephony is not set'
+        echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-image
+        echo '' >> ./openwrt-apu/.config-apu2-image
         echo ''
-        cat ./openwrt-apu/.config-apu2-docker
+        cat ./openwrt-apu/.config-apu2-image
         echo ''
         chmod +x ./openwrt-apu/build.sh
         docker pull openwrtorg/imagebuilder
