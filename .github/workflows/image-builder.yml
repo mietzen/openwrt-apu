@@ -18,9 +18,9 @@ jobs:
     - name: Check for new commits on OpenWRT Master
       id: check
       run: |
-        rev_remote=$(git ls-remote https://github.com/openwrt/openwrt.git HEAD | awk '{print $1=substr($1,1,10)}' | tr -d "\n")
+        rev_remote=$(curl https://downloads.openwrt.org/snapshots/targets/x86/64/version.buildinfo -s | tr -d "\n")
         echo "$rev_remote"
-        rev_last_build=$(curl "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/gh-pages/latest-build.rev" -s | cut -d'-' -f2 | tr -d "\n")
+        rev_last_build=$(curl "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/gh-pages/latest-build.rev" -s | tr -d "\n")
         echo "$rev_last_build"
         if [ "$rev_remote" != "$rev_last_build" ] || [ "$GITHUB_EVENT_NAME" = "pull_request" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then
           echo ::set-output name=NEW::true ;
