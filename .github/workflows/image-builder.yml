@@ -102,10 +102,9 @@ jobs:
     - name: House Keeping
       env:
         BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}    
-      run: |
-        sudo apt-get update -q
-        sudo apt-get install jq -q -y      
+      run: |   
         BUILD_REV=$(cat ./latest-build.rev)
+
         pages_branch="gh-pages"
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
@@ -120,6 +119,7 @@ jobs:
         if [ $old_revisions -gt 2 ]; then
           rm -rf $(ls | grep -E ^r[[:digit:]]{5}-[[:alnum:]]{10}$ | head -n 1);
         fi;
+        cd ..
 
         VERIONS=( $(curl -s -X GET https://api.bintray.com/packages/${GITHUB_ACTOR}/OpenWRT/x86_64 | jq -r '.versions | .[]') )
         if [[ " ${VERIONS[@]} " =~ " ${BUILD_REV} " ]]; then
@@ -136,6 +136,7 @@ jobs:
       env:
         BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}    
       run: |
+        cd artifacts
         BUILD_REV=$(cat ./latest-build.rev)
         BT_BASE_URL=$(echo "https://api.bintray.com/content/${GITHUB_ACTOR}/OpenWRT/x86_64/")
         VERIONS=( $(curl -s -X GET ${BT_BASE_URL} | jq -r '.versions | .[]') )
@@ -146,15 +147,15 @@ jobs:
           curl -s -T ${i} -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} ${BT_BASE_URL}/${BUILD_REV}/${i}
         done
 
-    - name: Build and deploy GH-Pages
+    - name: Update GH-Pages
       env:
-        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
         BUILD_REV=$(cat ./latest-build.rev)
-        sudo apt-get update -q
-        sudo apt-get install tree -q -y
-        
+
+        pages_branch="gh-pages"
+        cd ${pages_branch}    
+
         rm latest-build.rev
         rm revision.svg
         find . -name '*.html' -exec rm {} \;
@@ -187,9 +188,9 @@ jobs:
         git config --local user.name "GitHub Action Bot"
 
         if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-          git commit -q -m "nightly build"
+          git commit -q -m "nightly image build"
         else
-          git commit -q -m "integration build"
+          git commit -q -m "integration image build"
         fi
         if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
           git push -f "${repo_url}" HEAD:${pages_branch}
@@ -249,22 +250,37 @@ jobs:
         mv -f openwrt-sdk/bin artifacts
         rm -rf openwrt-sdk
 
-    - name: Prepare and deploy pages
+    - name: Upload binaries
+      env:
+        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}    
+      run: |
+        cd artifacts
+        BUILD_REV=${{needs.build-image.outputs.build_rev}}
+        BT_BASE_URL=$(echo "https://api.bintray.com/content/${GITHUB_ACTOR}/OpenWRT/x86_64/")
+        VERIONS=( $(curl -s -X GET ${BT_BASE_URL} | jq -r '.versions | .[]') )
+        FILES=( $(find . -exec sh -c "echo {} | sed 's/^.\{2\}//'" \;) )
+        
+        for i in "${FILES[@]}"
+        do
+          curl -s -T ${i} -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} ${BT_BASE_URL}/${BUILD_REV}/${i}
+        done
+
+    - name: Update GH-Pages
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
         BUILD_REV=${{needs.build-image.outputs.build_rev}}
-        sudo apt-get update -q
-        sudo apt-get install tree -q -y
+  
         pages_branch="gh-pages"
         repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
         git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
         cd ${pages_branch}
-        # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
-        git reset --soft $(git rev-list --max-parents=0 HEAD)
 
+        rm latest-build.rev
+        rm revision.svg
         find . -name '*.html' -exec rm {} \;
-        cd ${BUILD_REV}
+
+        mkdir ${BUILD_REV}
         mv -f ../artifacts/* ./${BUILD_REV}
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
         find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
@@ -274,13 +290,27 @@ jobs:
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
 
+        BT_BASE_URL=$(echo "https://api.bintray.com/content/${GITHUB_ACTOR}/OpenWRT/x86_64/")
+        INDEXED_FILES=( $(find . ! -name 'index.html' -exec sh -c "echo {} | sed 's/^.\{2\}//'" \;) )
+        for i in "${INDEXED_FILES[@]}"; do
+          REL_PATH=$(dirname ${i})
+          FILE=$(basename ${i})
+          sed -i -e 's#<a href="./${FILE}">${FILE}</a><br>#<a href="${BT_BASE_URL}/${REL_PATH}/${FILE}">${FILE}</a><br>#g' ${REL_PATH}/index.html
+        done
+        find . ! -name 'index.html' -type f -exec rm -f {} +
+
+        cp ../latest-master.html .
+        cp ../latest-build.rev .
+        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat ./latest-build.rev | sed 's/-/_/g')-blue" > ./revision.svg
+
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
+
         if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-          git commit -q -m "nightly build"
+          git commit -q -m "nightly pkg build"
         else
-          git commit -q -m "integration build"
+          git commit -q -m "integration pkg build"
         fi
         if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
           git push -f "${repo_url}" HEAD:${pages_branch}
