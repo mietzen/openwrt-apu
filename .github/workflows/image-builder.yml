@@ -98,13 +98,6 @@ jobs:
         rm -rf openwrt
         echo ::set-output name=BUILD_REV::$(cat ./latest-build.rev) ;
 
-    - name: 'Upload Logs'
-      uses: actions/upload-artifact@v2
-      with:
-        name: image-logs
-        path: image-logs.zip
-        retention-days: 5
-
     - name: Prepare and deploy pages
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
@@ -153,6 +146,14 @@ jobs:
           git push -f "${repo_url}" HEAD:${pages_branch}
         fi
 
+    - name: 'Upload Logs'
+      uses: actions/upload-artifact@v2
+      if: ${{ always() }}
+      with:
+        name: image-logs
+        path: image-logs.zip
+        retention-days: 5
+
   build-pkgs:
     runs-on: ubuntu-latest
     name: "Build Image + SDK"
@@ -199,13 +200,6 @@ jobs:
         mv -f openwrt-sdk/bin artifacts
         rm -rf openwrt-sdk
 
-    - name: 'Upload Logs'
-      uses: actions/upload-artifact@v2
-      with:
-        name: pkg-logs
-        path: pkg-logs.zip
-        retention-days: 5
-
     - name: Prepare and deploy pages
       env:
         GITHUB_TOKEN: ${{ secrets.push_token }}
@@ -242,3 +236,11 @@ jobs:
         if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
           git push -f "${repo_url}" HEAD:${pages_branch}
         fi
+
+    - name: 'Upload Logs'
+      uses: actions/upload-artifact@v2
+      if: ${{ always() }}
+      with:
+        name: pkg-logs
+        path: pkg-logs.zip
+        retention-days: 5
