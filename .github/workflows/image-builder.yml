@@ -77,6 +77,7 @@ jobs:
         BUILD_REV=$(cat ./latest-build.rev)
         REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d"/" -f2)
         REPO_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_REV}
+
         cp ./openwrt-apu/latest-master.html.in ./latest-master.html
         sed -i -e 's#%URL%#'$REPO_URL'/targets/x86/64#g' ./latest-master.html
         echo 'CONFIG_VERSION_REPO="'${REPO_URL}'"' >> ./openwrt-apu/.config-apu2-image
@@ -98,30 +99,66 @@ jobs:
         rm -rf openwrt
         echo ::set-output name=BUILD_REV::$(cat ./latest-build.rev) ;
 
-    - name: Prepare and deploy pages
+    - name: House Keeping
       env:
+        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}    
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install jq -q -y      
+        BUILD_REV=$(cat ./latest-build.rev)
+        pages_branch="gh-pages"
+        repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+        git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
+        cd ${pages_branch}
+
+        # Keep last three builds
+        if $(ls | grep -q $BUILD_REV); then
+          rm -rf $BUILD_REV;
+        fi;
+
+        old_revisions=$(ls | grep -E ^r[[:digit:]]{5}-[[:alnum:]]{10}$ | wc -l || echo 0)
+        if [ $old_revisions -gt 2 ]; then
+          rm -rf $(ls | grep -E ^r[[:digit:]]{5}-[[:alnum:]]{10}$ | head -n 1);
+        fi;
+
+        VERIONS=( $(curl -s -X GET https://api.bintray.com/packages/${GITHUB_ACTOR}/OpenWRT/x86_64 | jq -r '.versions | .[]') )
+        if [[ " ${VERIONS[@]} " =~ " ${BUILD_REV} " ]]; then
+          curl -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} -s -X DELETE https://api.bintray.com/packages/${GITHUB_ACTOR}/OpenWRT/x86_64/versions/${BUILD_REV}
+        fi;
+
+        if [ ${#VERIONS[@]} -gt 2 ]; then
+          for i in ${VERIONS[{2..-1}]}; do
+            curl -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} -s -X DELETE https://api.bintray.com/packages/${GITHUB_ACTOR}/OpenWRT/x86_64/versions/${i}
+          done 
+        fi;
+
+    - name: Upload binaries
+      env:
+        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}    
+      run: |
+        BUILD_REV=$(cat ./latest-build.rev)
+        BT_BASE_URL=$(echo "https://api.bintray.com/content/${GITHUB_ACTOR}/OpenWRT/x86_64/")
+        VERIONS=( $(curl -s -X GET ${BT_BASE_URL} | jq -r '.versions | .[]') )
+        FILES=( $(find . -exec sh -c "echo {} | sed 's/^.\{2\}//'" \;) )
+        
+        for i in "${FILES[@]}"
+        do
+          curl -s -T ${i} -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} ${BT_BASE_URL}/${BUILD_REV}/${i}
+        done
+
+    - name: Build and deploy GH-Pages
+      env:
+        BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.push_token }}
       run: |
         BUILD_REV=$(cat ./latest-build.rev)
         sudo apt-get update -q
         sudo apt-get install tree -q -y
-        pages_branch="gh-pages"
-        repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-        git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
-        cd ${pages_branch}
-        # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
-        git reset --soft $(git rev-list --max-parents=0 HEAD)
-        # Keep last three builds
-        if $(ls | grep -q $BUILD_REV); then
-          rm -rf $BUILD_REV;
-        fi;
-        old_revisions=$(ls | grep -E ^r[[:digit:]]{5}-[[:alnum:]]{10}$ | wc -l || echo 0)
-        if [ $old_revisions -gt 2 ]; then
-          rm -rf $(ls | grep -E ^r[[:digit:]]{5}-[[:alnum:]]{10}$ | head -n 1);
-        fi;
+        
         rm latest-build.rev
         rm revision.svg
         find . -name '*.html' -exec rm {} \;
+
         mkdir ${BUILD_REV}
         mv -f ../artifacts/* ./${BUILD_REV}
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
@@ -131,12 +168,24 @@ jobs:
         find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
         find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
         find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
+
+        BT_BASE_URL=$(echo "https://api.bintray.com/content/${GITHUB_ACTOR}/OpenWRT/x86_64/")
+        INDEXED_FILES=( $(find . ! -name 'index.html' -exec sh -c "echo {} | sed 's/^.\{2\}//'" \;) )
+        for i in "${INDEXED_FILES[@]}"; do
+          REL_PATH=$(dirname ${i})
+          FILE=$(basename ${i})
+          sed -i -e 's#<a href="./${FILE}">${FILE}</a><br>#<a href="${BT_BASE_URL}/${REL_PATH}/${FILE}">${FILE}</a><br>#g' ${REL_PATH}/index.html
+        done
+        find . ! -name 'index.html' -type f -exec rm -f {} +
+
         cp ../latest-master.html .
         cp ../latest-build.rev .
         curl -s -X POST "https://img.shields.io/badge/Revision-$(cat ./latest-build.rev | sed 's/-/_/g')-blue" > ./revision.svg
+
         git add .
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
+
         if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
           git commit -q -m "nightly build"
         else
