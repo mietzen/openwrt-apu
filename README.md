@@ -9,7 +9,7 @@
 
 ## What's this?
 
-This is my personal Setup/Image for a OpenWRT installation on the APU2 with docker. Why? Because the apu has more than enough power to also run traefik and pihole along with OpenWRT and function as ingress node for my small home cluster.  
+This is my personal Setup/Image for a OpenWRT installation on the APU2 with docker. Why? Because the apu has more than enough power to also run traefik and pihole along with OpenWRT and function as ingress node for my small home cluster.
 The image has all the APU2 + WLE600VX specific packages installed.
 It's also compiled with the following settings:
 
@@ -31,7 +31,8 @@ CONFIG_TARGET_OPTIMIZATION=”-Os -pipe -march=btver2“
 
 - PC Engines APU 2
 - WLE600VX Wifi card
-- 16 GB mSATA SSD (Don't use an SD card, the mSATA SSD is way faster)
+- OS: 16 GB mSATA SSD (Don't use a SD card, the mSATA SSD is way faster)
+- Persistent data: USB / SD-Card / S-ATA
 - Serial to USB adapter (Setup)
 - USB stick >= 4 GB (Setup)
 
@@ -41,9 +42,9 @@ CONFIG_TARGET_OPTIMIZATION=”-Os -pipe -march=btver2“
 
 This is only a very brief instruction on how to setup the apu for a more detailed description see the [official install guide](https://openwrt.org/toh/pcengines/apu2).
 
-Get a serial to USB adapter and a USB stick, install [TinyCore](https://www.pcengines.ch/tinycore.htm) to it and copy the image on the stick.  
-(You may also want to update your BIOS, if so follow this [guide](https://pcengines.ch/howto.htm#TinyCoreLinux) )  
-Plug the stick into the apu and connect it via the USB to serial adapter with your PC, but don't power the apu on yet.  
+Get a serial to USB adapter and a USB stick, install [TinyCore](https://www.pcengines.ch/tinycore.htm) to it and copy the image on the stick.
+(You may also want to update your BIOS, if so follow this [guide](https://pcengines.ch/howto.htm#TinyCoreLinux) )
+Plug the stick into the apu and connect it via the USB to serial adapter with your PC, but don't power the apu on yet.
 Open a Terminal and type:
 ```
 screen /dev/$(dmesg | grep -o -e "ttyUSB[[:digit:]]$") 115200,cs8
@@ -76,12 +77,12 @@ Enter `passwd` you'll be prompted for a new password
  I/O size (minimum/optimal): 512 bytes / 512 bytes
  Disklabel type: dos
  Disk identifier: 0x423b062f
- Device     Boot   Start      End  Sectors  Size Id Type
- /dev/sda1  *        512    33279    32768   16M 83 Linux
- /dev/sda2         33792  1057791  1024000  500M 83 Linux
+ Device     Boot  Start      End  Sectors  Size Id Type
+ /dev/sda1  *       512    41471    40960   20M 83 Linux
+ /dev/sda2        41984   513023   471040  230M 83 Linux
  ```
 
- Now press `n` to create a new partition press `Retrun` 4 times to use the  default value, this will create a partition filling up all unassinged space.  
+ Now press `n` to create a new partition press `Retrun` 4 times to use the  default value, this will create a partition filling up all unassinged space.
  Press `p` again to print your partition table, it should now look like this:
  ```
 
@@ -93,39 +94,71 @@ Enter `passwd` you'll be prompted for a new password
  Disklabel type: dos
  Disk identifier: 0x423b062f
 
- Device     Boot   Start      End  Sectors  Size Id Type
- /dev/sda1  *        512    33279    32768   16M 83 Linux
- /dev/sda2         33792  1057791  1024000  500M 83 Linux
- /dev/sda3       1058816 31277231 30218416 14.4G 83 Linux
+ Device     Boot  Start      End  Sectors  Size Id Type
+ /dev/sda1  *       512    41471    40960   20M 83 Linux
+ /dev/sda2        41984   513023   471040  230M 83 Linux
+ /dev/sda3       514048 31277231 30763184 14.7G 83 Linux
+
  ```
 
-`nano /etc/config/fstab`
+Press `w` to safe the changes
 
 ```
-config mount 'overlay'
-        option target '/overlay'
-        option device '/dev/sda3'
-        option enabled '1'
+mkfs.ext4 /dev/sda3
+```
+
+
+`vi /etc/config/fstab`
+
+```
+config 'global'
+	option	anon_swap	'0'
+	option	anon_mount	'0'
+	option	auto_swap	'1'
+	option	auto_mount	'0'
+	option	delay_root	'5'
+	option	check_fs	'1'
+
+config 'mount'
+	option	target	'/boot'
+	option	device	'/dev/sda1'
+	option	enabled	'1'
+
+config 'mount'
+	option	target	'/rom'
+	option	device	'/dev/sda2'
+	option	enabled	'1'
+
+config 'mount'
+	option	target	'/'
+	option	device	'/dev/sda3'
+	option	enabled	'1'
+
 ```
 
 ```
-mount /dev/sda3 /mnt
-cp -a -f /overlay/. /mnt
-umount /mnt
+mkdir -p /tmp/introot
+mkdir -p /tmp/extroot
+mount --bind / /tmp/introot
+mount /dev/sda3 /tmp/extroot
+tar -C /tmp/introot -cvf - . | tar -C /tmp/extroot -xf -
+umount /tmp/introot
+umount /tmp/extroot
 ```
 
 `reboot`
 
+#### Create a swap partition
 
-`dd if=/dev/zero of=/overlay/swap bs=1M count=512`
+`dd if=/dev/zero of=/swap bs=1M count=512`
 
-`mkswap /overlay/swap`
+`mkswap /swap`
 
-`nano /etc/config/fstab`
+`vi /etc/config/fstab`
 
 ```
 config swap 'swap'
-        option device '/overlay/swap'
+        option device '/swap'
         option enabled '1'
 
 ```
@@ -136,12 +169,38 @@ config swap 'swap'
 
 ```
 Filename				Type		Size	Used	Priority
-/overlay/swap                           file		1023996	0	-2
+/swap                           file		1023996	0	-2
 ```
 
-add key to $HOME/.shh/authorized_keys
+#### Create a persistent data partition
 
-test login
+#### Partition the rest of your volume
+
+ `mkdir /data`
+ Type `fdisk /dev/sdb` / `fdisk /dev/mmcblk0`
+ Now press `d` to delete the old and `n` to create a new partition press `Retrun` 4 times to use the default value, this will create a partition filling up all space.
+ Press `p` again to print your partition table, it should now look like this:
+
+Press `w` to safe the changes
+
+`mkfs.ext4 /dev/sdb1` / `mkfs.ext4 /dev/mmcblk0p1`
+
+`vi /etc/config/fstab`
+
+```
+config 'mount'
+	option	target	'/data'
+	option	device	'/dev/<DEVICE>'
+	option	enabled	'1'
+```
+
+`reboot`
+
+#### Make login secure
+
+add key to `/root/.shh/authorized_keys`
+
+test login (!!!)
 
 ```
 config dropbear
@@ -153,3 +212,48 @@ config dropbear
         option BannerFile   '/etc/banner'
 
 ```
+
+#### Install Packages
+
+```
+opkg update
+opkg install collectd-mod-disk collectd-mod-iptables collectd-mod-ping collectd-mod-uptime collectd-mod-users collectd-mod-wireless \
+	curl docker-compose git-http htop luci-app-ddns luci-app-dockerman luci-app-p910nd luci-app-shadowsocks-libev luci-app-statistics \
+	luci-app-vpn-policy-routing luci-app-wireguard nano shadowsocks-libev-ss-local shadowsocks-libev-ss-rules shadowsocks-libev-ss-server \
+	shadowsocks-libev-ss-tunnel wireguard zsh
+```
+`reboot`
+
+#### Change default shell to zsh
+
+`nano /etc/passwd`
+
+```
+root:x:0:0:root:/root:/usr/bin/zsh
+```
+
+```
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+### Setup VPN-Client
+
+### Setup VPN-Server
+
+### Setup DDNS
+
+### Setup Containers
+
+#### Setup Swarm
+
+#### Setup PiHole
+
+#### Setup traefik
+
+#### Setup Nextcloud
+
+#### Setup Portainer
+
+#### Setup Git-Tea
+
+#### Setup Jenkins

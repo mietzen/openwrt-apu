@@ -28,9 +28,11 @@ jobs:
 
   build-image:
     runs-on: ubuntu-latest
-    name: "Build Image"
+    name: "Build Image + SDK"
     needs: commits
     if: ${{needs.commits.outputs.new}}
+    outputs:
+      build_rev: ${{ steps.check.Build.BUILD_REV }}    
     steps:
     - name: Checkout config
       uses: actions/checkout@v2
@@ -42,6 +44,12 @@ jobs:
         cd openwrt-apu
         chmod +x ./free-space.sh
         ./free-space.sh
+
+    - name: Install dependencies
+      run: |
+        cd openwrt-apu
+        chmod +x ./install-deps.sh
+        ./install-deps.sh
 
     - name: Host info
       run: |
@@ -76,15 +84,26 @@ jobs:
         echo ''
         cat ./openwrt-apu/.config-apu2-image
         echo ''
-        chmod +x ./openwrt-apu/build.sh
-        docker pull openwrtorg/imagebuilder
-        docker run --rm -v ${GITHUB_WORKSPACE}:/home/build/openwrt openwrtorg/imagebuilder ./openwrt-apu/build.sh
-        sudo chown -R $(id -u):$(id -g) .
-        if grep -q -i error build.log; then
-          exit -1
-        fi;
+
+        cd openwrt
+        ./scripts/feeds update
+        ./scripts/feeds install -a
+        cp ../openwrt-apu/.config-apu2-image .config
+        make defconfig
+        make -j$(($(nproc)+1)) download world BUILD_LOG=1
+        cd ..
+        zip -r image-logs.zip openwrt/logs
         mv -f openwrt/bin artifacts
+        mv artifacts/targets/x86/64/openwrt-sdk-*.tar.xz artifacts/targets/x86/64/openwrt-sdk.tar.xz
         rm -rf openwrt
+        echo ::set-output name=BUILD_REV::$(cat ./latest-build.rev) ;
+
+    - name: 'Upload Logs'
+      uses: actions/upload-artifact@v2
+      with:
+        name: image-logs
+        path: image-logs.zip
+        retention-days: 5
 
     - name: Prepare and deploy pages
       env:
@@ -134,31 +153,92 @@ jobs:
           git push -f "${repo_url}" HEAD:${pages_branch}
         fi
 
-    - name: On failure
-      if: failure()
+  build-pkgs:
+    runs-on: ubuntu-latest
+    name: "Build Image + SDK"
+    needs: build-image
+    steps:
+    - name: Free disk space
       run: |
-        echo 'Build Error!'
-        echo "-------------------------------"
-        grep -i error build.log
-        echo ""
-        echo "Disk space:"
-        echo "-------------------------------"
-        df -h /
-        echo ""
-        echo "Repo HEAD:"
-        echo "-------------------------------"
         cd openwrt-apu
-        git rev-parse HEAD
-        echo ""
-        echo "Repo Content:"
-        echo "-------------------------------"
-        ls -al
+        chmod +x ./free-space.sh
+        ./free-space.sh
+
+    - name: Install dependencies
+      run: |
+        cd openwrt-apu
+        chmod +x ./install-deps.sh
+        ./install-deps.sh
+
+    - name: Host info
+      run: |
+        echo "Disk space:"
+        df -h /
+        echo "Workspace:"
+        du -h -d 1 .
+        echo "Repo HEAD:"
+        cd openwrt-apu && git rev-parse HEAD && cd ..
+
+    - name: Build Pkgs
+      run: |
+        BUILD_REV=${{needs.build-image.outputs.build_rev}}
+        REPO_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d"/" -f2)
+        SDK_URL=https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_REV}/targets/x86/64/openwrt-sdk.tar.xz
+        wget "${SDK_URL}"
+        tar -xf openwrt-sdk.tar.xz
+        cd openwrt-sdk
+        ./scripts/feeds update
+        ./scripts/feeds install -a
+        make defconfig
+        make -j$(($(nproc)+1)) 'IGNORE_ERRORS=n m y' BUILD_LOG=1 CONFIG_AUTOREMOVE=y CONFIG_SIGNED_PACKAGES=
         cd ..
-        echo ""
-        echo "Config:"
-        echo "-------------------------------"
-        cat ./openwrt-apu/.config-apu2-docker
-        echo ""
-        echo "Event path:"
-        echo "-------------------------------"
-        cat ${GITHUB_EVENT_PATH}
+        zip -r pkg-logs.zip openwrt-sdk/logs
+        if -f openwrt-sdk/logs/package/error.txt; then
+          cat openwrt-sdk/logs/package/error.txt
+        fi;        
+        mv -f openwrt-sdk/bin artifacts
+        rm -rf openwrt-sdk
+
+    - name: 'Upload Logs'
+      uses: actions/upload-artifact@v2
+      with:
+        name: pkg-logs
+        path: pkg-logs.zip
+        retention-days: 5
+
+    - name: Prepare and deploy pages
+      env:
+        GITHUB_TOKEN: ${{ secrets.push_token }}
+      run: |
+        BUILD_REV=${{needs.build-image.outputs.build_rev}}
+        sudo apt-get update -q
+        sudo apt-get install tree -q -y
+        pages_branch="gh-pages"
+        repo_url=https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+        git clone -b "${pages_branch}" "${repo_url}" "${pages_branch}"
+        cd ${pages_branch}
+        # Reset to empty init commit, we won't save the history of gh-pages due to 1 GB quota
+        git reset --soft $(git rev-list --max-parents=0 HEAD)
+
+        find . -name '*.html' -exec rm {} \;
+        cd ${BUILD_REV}
+        mv -f ../artifacts/* ./${BUILD_REV}
+        find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
+        find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
+        find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
+        sed -i -e 's#<a href="../0_index.html">..</a><br>#<a href="./0_index.html">.</a><br>#g' ./0_index.html
+        find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
+        find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
+        find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
+
+        git add .
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action Bot"
+        if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+          git commit -q -m "nightly build"
+        else
+          git commit -q -m "integration build"
+        fi
+        if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          git push -f "${repo_url}" HEAD:${pages_branch}
+        fi
