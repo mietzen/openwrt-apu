@@ -65,128 +65,35 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.push_token }}
         BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}      
       run: |
+        set -ex
+
+        ## Set env
+        export GITHUB_TOKEN
+        export BINTRAY_API_KEY
+        export GITHUB_ACTOR
+        export GITHUB_REPOSITORY
+
+        ## Clone Repo
         git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
 
-        ## Prepare Build
-        # Set rev
-        cd openwrt
-        git checkout $(curl -s https://downloads.openwrt.org/snapshots/targets/x86/64/version.buildinfo | cut -d'-' -f2)
-        rm -f feeds.conf.default
-        curl -s -o feeds.conf.default https://downloads.openwrt.org/snapshots/targets/x86/64/feeds.buildinfo
-        rm -f .config
-        echo $(./scripts/getver.sh) >> ../latest-build.rev
-        cd ..
+        ## Set Rev
+        ./build-openWRT-set-rev.sh
 
-        # Set env
-        BUILD_REV=$(cat ./latest-build.rev)
-
-        GH_PAGES_BRANCH="gh-pages"
-        GH_PAGES_REPO="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-        GH_PAGES_URL="https://${GITHUB_ACTOR}.github.io/${GITHUB_REPOSITORY}/${BUILD_REV}"
-
-        BT_DL_URL="https://dl.bintray.com/${GITHUB_ACTOR}/OpenWRT"
-        BT_UL_URL="https://api.bintray.com/content/${GITHUB_ACTOR}/OpenWRT/x86_64_snapshots/"
-        BT_PKG_API_URL="https://api.bintray.com/packages/${GITHUB_ACTOR}/OpenWRT/x86_64_snapshots"
-
-        # Set Repo
-        cp ./openwrt-apu/latest-master.html.in ./latest-master.html
-        sed -i -e 's#%URL%#'${GH_PAGES_URL}'/targets/x86/64#g' ./latest-master.html
-        echo 'CONFIG_VERSION_REPO="'${BT_DL_URL}'"' >> ./openwrt-apu/.config-apu2-image
-        echo '' >> ./openwrt-apu/.config-apu2-image
-
+        ## Prepare .config
+        ./build-openWRT-set-repo.sh
 
         ## Build Base
-        cd openwrt
-        ./scripts/feeds update
-        ./scripts/feeds install -a
-        cp ../openwrt-apu/.config-apu2-image .config
-        make defconfig
-        make -j$(($(nproc)+1)) download world BUILD_LOG=1
-        zip -r ../image-logs.zip logs
-        cd ..
+        ./build-openWRT-build-base.sh
 
-
-        ## House keeping & clean up
-        BT_VERIONS=( $(curl -s -X GET ${BT_PKG_API_URL} | jq -r '.versions | .[]') )
-        if [[ " ${BT_VERIONS[@]} " =~ " ${BUILD_REV} " ]]; then
-            curl -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} -s -X DELETE ${BT_PKG_API_URL}/${BUILD_REV}
-        fi;
-
-        if [ ${#BT_VERIONS[@]} -gt 2 ]; then
-            for i in ${BT_VERIONS[{2..-1}]}; do
-            curl -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} -s -X DELETE ${BT_PKG_API_URL}/versions/${i}
-            done 
-        fi;
-
-        mkdir -p artifacts
-        mv -f openwrt/bin/* artifacts
-        rm -rf openwrt
-
-        mv artifacts/targets/x86/64/openwrt-sdk-*.tar.xz artifacts/targets/x86/64/openwrt-sdk.tar.xz
-
-
-        ## Make all pkgs
-        tar -xf artifacts/targets/x86/64/openwrt-sdk.tar.xz
-        cd openwrt-sdk
-        ./scripts/feeds update
-        ./scripts/feeds install -a
-        make defconfig
-        make -j$(($(nproc)+1)) 'IGNORE_ERRORS=n m y' BUILD_LOG=1 CONFIG_AUTOREMOVE=y CONFIG_SIGNED_PACKAGES=
-        cd ..
-        zip -r pkg-logs.zip openwrt-sdk/logs
-        if -f openwrt-sdk/logs/package/error.txt; then
-          cat openwrt-sdk/logs/package/error.txt
-        fi;        
-        mv -f openwrt-sdk/bin artifacts
-        rm -rf openwrt-sdk
-
+        ## Build all pkgs
+        ./build-openWRT-build-pkgs.sh
 
         ## Upload to bintray
-        cd artifacts
-        zip -r artifacts.zip *
-        curl -s -T artifacts.zip -u${GITHUB_ACTOR}:${BINTRAY_API_KEY} ${BT_UL_URL}/${BUILD_REV}/artifacts.zip?explode=1?override=1
-        rm -rf artifacts.zip
-        cd ..
-
+        ./build-openWRT-upload.sh
 
         ## GH-Pages
-        git clone "${GH_PAGES_REPO}" --single-branch --branch="${GH_PAGES_BRANCH}"
-        cd ${GH_PAGES_BRANCH}
-        rm -rf ./*
-        mv -f ../artifacts/* .
+        ./build-openWRT-build-gh-pages.sh
 
-        find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
-        find . -name '*.html' -exec sed -i -e 's#<a href=".">.</a><br>#<a href="../0_index.html">..</a><br>#g' {} \;
-        find . -name '*.html' -exec sed -i -e 's#/">#/0_index.html">#g' {} \;
-        sed -i -e 's#<a href="../0_index.html">..</a><br>#<a href="./0_index.html">.</a><br>#g' ./0_index.html
-        find . -name '*.html' -exec sed -i '/0_index.html<\/a><br>/d' {} \;
-        find . -type d -exec sh -c 'cd $0 && mv 0_index.html index.html' {} \;
-        find . -name '*.html' -exec sed -i -e 's/0_index.html/index.html/g' {} \;
-
-        INDEXED_FILES=( $(find . ! -name 'index.html' -type f -not -path '*/\.*' -not -path '.' -exec sh -c "echo {} | sed 's/^.\{2\}//'" \;) )
-        for i in "${INDEXED_FILES[@]}"; do
-          REL_PATH=$(dirname ${i})
-          FILE=$(basename ${i})
-          sed -i -e 's#<a href="./'"${FILE}"'">'"${FILE}"'</a><br>#<a href="'"${BT_DL_URL}"'/'"${REL_PATH}"'/'"${FILE}"'">'"${FILE}"'</a><br>#g' ${REL_PATH}/index.html
-        done
-
-        find . -not -name 'index.html' -type f -exec rm -f {} \;
-        cp ../latest-master.html .
-        cp ../latest-build.rev .
-        curl -s -X POST "https://img.shields.io/badge/Revision-$(cat ./latest-build.rev | sed 's/-/_/g')-blue" > ./revision.svg
-
-        git add .
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action Bot"
-
-        if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
-          git commit -q -m "nightly image build"
-        else
-          git commit -q -m "integration image build"
-        fi
-        if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-          git push -f "${GH_PAGES_REPO}" HEAD:${GH_PAGES_BRANCH}
-        fi
 
     - name: 'Upload Logs'
       uses: actions/upload-artifact@v2
