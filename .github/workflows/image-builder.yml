@@ -152,7 +152,7 @@ jobs:
         ## GH-Pages
         git clone "${GH_PAGES_REPO}" --single-branch --branch="${GH_PAGES_BRANCH}"
         cd ${GH_PAGES_BRANCH}
-        rm -rf *
+        rm -rf ./*
         mv -f ../artifacts/* .
 
         find . -type d -exec sh -c 'cd $0 && tree -H '.' -L 1 --noreport --charset utf-8 > "./0_index.html"' {} \;
