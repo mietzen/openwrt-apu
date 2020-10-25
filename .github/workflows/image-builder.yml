@@ -81,8 +81,8 @@ jobs:
         BUILD_REV=$(cat ./latest-build.rev)
 
         GH_PAGES_BRANCH="gh-pages"
-        GH_PAGES_REPO="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${REPO_NAME}.git"
-        GH_PAGES_URL="https://${GITHUB_ACTOR}.github.io/${REPO_NAME}/${BUILD_REV}"
+        GH_PAGES_REPO="https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        GH_PAGES_URL="https://${GITHUB_ACTOR}.github.io/${GITHUB_REPOSITORY}/${BUILD_REV}"
 
         BT_DL_URL="https://dl.bintray.com/${GITHUB_ACTOR}/OpenWRT"
         BT_UL_URL="https://api.bintray.com/content/${GITHUB_ACTOR}/OpenWRT/x86_64_snapshots/"
