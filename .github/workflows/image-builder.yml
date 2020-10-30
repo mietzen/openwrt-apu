@@ -86,7 +86,7 @@ jobs:
         ./build-openWRT-build-base.sh
 
         ## Build all pkgs
-        ./build-openWRT-build-pkgs.sh
+        # ./build-openWRT-build-pkgs.sh
 
         ## Upload to bintray
         ./build-openWRT-upload.sh
@@ -94,19 +94,12 @@ jobs:
         ## GH-Pages
         ./build-openWRT-build-gh-pages.sh
 
-
     - name: 'Upload Logs'
       uses: actions/upload-artifact@v2
       if: ${{ always() }}
       with:
-        name: image-logs
-        path: image-logs.zip
-        retention-days: 5
-
-    - name: 'Upload Logs'
-      uses: actions/upload-artifact@v2
-      if: ${{ always() }}
-      with:
-        name: pkg-logs
-        path: pkg-logs.zip
+        name: logs
+        path: |
+          image-logs.zip
+          pkg-logs.zip
         retention-days: 5
