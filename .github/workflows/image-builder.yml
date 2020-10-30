@@ -75,6 +75,8 @@ jobs:
 
         ## Clone Repo
         git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
+        
+        cp openwrt-apu/build-openWRT-* .
 
         ## Set Rev
         ./build-openWRT-set-rev.sh
