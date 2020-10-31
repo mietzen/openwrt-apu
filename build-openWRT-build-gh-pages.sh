@@ -42,7 +42,7 @@ else
   git commit -q -m "integration image build"
 fi
 if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-  #git push -f "${GH_PAGES_REPO}" HEAD:${GH_PAGES_BRANCH}
+  git push -f "${GH_PAGES_REPO}" HEAD:${GH_PAGES_BRANCH}
 fi
 
 exit 0
